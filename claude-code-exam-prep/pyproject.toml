@@ -1,0 +1,19 @@
+[project]
+name = "claude-code-exam-prep"
+version = "0.1.0"
+description = "Study project for the Claude Certified Developer exam: drills, notes, labs, and a working .claude/ config."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = []          # the drill engine is stdlib only, on purpose
+
+[project.optional-dependencies]
+# Only the sandbox/ scripts need these.
+sandbox = ["anthropic>=0.40", "pydantic>=2"]
+mcp = ["mcp[cli]>=1.2"]
+
+[project.scripts]
+quiz = "quiz.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["quiz*"]

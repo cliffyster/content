@@ -1,0 +1,122 @@
+[
+  {
+    "id": "mcp-001",
+    "domain": "mcp",
+    "difficulty": 1,
+    "question": "How are MCP tools named once a server is connected?",
+    "choices": [
+      "<server>.<tool>",
+      "mcp__<server>__<tool>",
+      "mcp:<server>:<tool>",
+      "<tool>@<server>"
+    ],
+    "answer": [1],
+    "explanation": "MCP tools use mcp__<server>__<tool>, e.g. mcp__github__get_issue. This is also the shape permission rules and hook matchers must use.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-002",
+    "domain": "mcp",
+    "difficulty": 2,
+    "question": "In `claude mcp add --env KEY=value --transport stdio myserver -- python server.py --port 8080`, what does the bare `--` do?",
+    "choices": [
+      "Marks the end of the command; everything after it is ignored",
+      "Separates Claude's own options from the command and args that run the server -- everything after it is passed untouched",
+      "Signals that the server uses HTTP instead of stdio",
+      "Escapes the following flag so it is treated as a literal"
+    ],
+    "answer": [1],
+    "explanation": "For stdio servers, `--` separates Claude's options (--transport, --env, --scope) from the server command line. Everything after it is passed to the server verbatim, so --port 8080 reaches python server.py rather than being parsed by Claude Code.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-003",
+    "domain": "mcp",
+    "difficulty": 2,
+    "question": "Which MCP scope stores its configuration in a .mcp.json file at the project root, intended to be committed?",
+    "choices": [
+      "local",
+      "project",
+      "user",
+      "managed"
+    ],
+    "answer": [1],
+    "explanation": "Project scope writes .mcp.json at the project root so the whole team gets the same servers. Local scope (the default for `claude mcp add`) is private to you in that project; user scope applies across all your projects.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-004",
+    "domain": "mcp",
+    "difficulty": 3,
+    "question": "A repo contains .mcp.json. In which contexts does Claude Code load those servers WITHOUT prompting for approval? (select 3)",
+    "choices": [
+      "An interactive terminal session",
+      "A `claude -p` run",
+      "An Agent SDK session",
+      "A cloud session"
+    ],
+    "answer": [1, 2, 3],
+    "explanation": "Interactive sessions prompt for approval before using project-scoped servers. Non-interactive contexts -- claude -p, Agent SDK sessions and cloud sessions -- cannot show that prompt, so they load them without asking. To keep a server out regardless of mode, list it in disabledMcpjsonServers, or exclude project settings entirely with --setting-sources / the SDK's settingSources option.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-005",
+    "domain": "mcp",
+    "difficulty": 2,
+    "question": "In a .mcp.json entry, which value is accepted as an alias for the \"http\" type?",
+    "choices": [
+      "rest",
+      "streamable-http",
+      "https",
+      "web"
+    ],
+    "answer": [1],
+    "explanation": "The MCP specification calls this transport streamable-http, so the `type` field accepts it as an alias for \"http\" in .mcp.json, ~/.claude.json and `claude mcp add-json`. That lets you paste a server's own documented config without editing it.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-006",
+    "domain": "mcp",
+    "difficulty": 3,
+    "question": "Which transport can NOT be configured with the `claude mcp add --transport` flag?",
+    "choices": [
+      "http",
+      "sse",
+      "stdio",
+      "ws (WebSocket)"
+    ],
+    "answer": [3],
+    "explanation": "--transport accepts http, sse and stdio. WebSocket servers must be configured in .mcp.json or via `claude mcp add-json` with type \"ws\". WebSocket also has no OAuth support -- authentication is header-only, via `headers` or `headersHelper`.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-007",
+    "domain": "mcp",
+    "difficulty": 1,
+    "question": "Which command shows whether Claude Code actually connected to a configured MCP server?",
+    "choices": [
+      "claude mcp get <name>",
+      "claude mcp ping <name>",
+      "claude mcp status",
+      "claude doctor --mcp"
+    ],
+    "answer": [0],
+    "explanation": "`claude mcp get <name>` shows a server's status; `claude mcp list` lists them; `claude mcp remove <name>` deletes one. `claude mcp reset-project-choices` clears the approvals you gave to .mcp.json servers.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  },
+  {
+    "id": "mcp-008",
+    "domain": "mcp",
+    "difficulty": 2,
+    "question": "A server's docs give you an `mcpServers` JSON block written for Claude Desktop. What do you pass to `claude mcp add-json`?",
+    "choices": [
+      "The whole block including the mcpServers wrapper",
+      "The object inside mcpServers, not the wrapper",
+      "Only the command string",
+      "The block converted to YAML"
+    ],
+    "answer": [1],
+    "explanation": "`claude mcp add-json <name> '<json>'` takes the entry object itself -- e.g. '{\"command\":\"npx\",\"args\":[\"-y\",\"@example/mcp-server\"]}' -- not the mcpServers wrapper. Add --scope project to share it with the team.",
+    "source": "https://code.claude.com/docs/en/mcp"
+  }
+]

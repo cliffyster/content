@@ -1,0 +1,182 @@
+[
+  {
+    "id": "hook-001",
+    "domain": "hooks",
+    "difficulty": 1,
+    "question": "A hook script exits with status 2. What does Claude Code do?",
+    "choices": [
+      "Treats it as success and reads the JSON output",
+      "Treats it as a blocking error -- the tool call is blocked or permission denied",
+      "Treats it as a non-blocking error and lets the action proceed",
+      "Retries the hook once, then proceeds"
+    ],
+    "answer": [1],
+    "explanation": "Exit 0 is success (Claude Code then reads stdout for structured JSON control). Exit 2 is a blocking error. Any other exit code is a non-blocking error and the action proceeds.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-002",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which JSON does a PreToolUse hook emit to deny a tool call with a reason?",
+    "choices": [
+      "{\"decision\": \"deny\", \"reason\": \"...\"}",
+      "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"...\"}}",
+      "{\"block\": true, \"message\": \"...\"}",
+      "{\"continue\": false}"
+    ],
+    "answer": [1],
+    "explanation": "PreToolUse uses hookSpecificOutput with permissionDecision (\"deny\" or \"allow\") and permissionDecisionReason. It can also supply updatedInput to rewrite the tool arguments. The bare {\"decision\": \"grant\"|\"deny\"} shape belongs to PermissionRequest.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-003",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which hook event can rewrite the user's prompt before Claude sees it?",
+    "choices": [
+      "UserPromptSubmit, via hookSpecificOutput.updatedPrompt",
+      "PreToolUse, via updatedInput",
+      "SessionStart, via additionalContext",
+      "PreCompact, via updatedPrompt"
+    ],
+    "answer": [0],
+    "explanation": "UserPromptSubmit fires before Claude processes a prompt and its hookSpecificOutput supports decision (allow/deny), reason and updatedPrompt. PreToolUse's updatedInput rewrites tool arguments, not prompts.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-004",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which of these are valid hook handler types? (select 3)",
+    "choices": [
+      "command",
+      "http",
+      "webhook",
+      "mcp_tool"
+    ],
+    "answer": [0, 1, 3],
+    "explanation": "The handler types are command (shell), http (POSTs the hook JSON to a URL), mcp_tool (calls a tool on a configured MCP server), prompt (asks a fast model) and agent (delegates to an agent). There is no 'webhook' type.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-005",
+    "domain": "hooks",
+    "difficulty": 3,
+    "question": "How is the matcher \"^Notebook.*\" interpreted, compared with \"Edit|Write\"?",
+    "choices": [
+      "Both are JavaScript regexes",
+      "Both are exact string lists",
+      "\"^Notebook.*\" is an unanchored JavaScript regex; \"Edit|Write\" is an exact-string list",
+      "\"^Notebook.*\" is invalid -- matchers do not support regex"
+    ],
+    "answer": [2],
+    "explanation": "A matcher containing only letters, digits, _, -, spaces, commas or pipes is treated as an exact string or list. A matcher containing any other character is compiled as an unanchored JavaScript regex -- so ^Notebook.* is a regex, while Edit|Write is a two-item list.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-006",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which values are valid matchers for the SessionStart event?",
+    "choices": [
+      "Bash, Edit, Write",
+      "startup, resume, clear",
+      "permission_prompt, idle_prompt",
+      "rate_limit, authentication_failed"
+    ],
+    "answer": [1],
+    "explanation": "Each event filters on something different: tool events filter on tool name, SessionStart on the start mode (startup, resume, clear), Notification on notification type (permission_prompt, idle_prompt), SubagentStart on agent type, and StopFailure on error type (rate_limit, authentication_failed).",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-007",
+    "domain": "hooks",
+    "difficulty": 3,
+    "question": "In a command hook, what changes when you supply the `args` array?",
+    "choices": [
+      "Nothing -- args is a display-only label",
+      "It switches to exec form: no shell runs, so pipes, && and globs pass through verbatim",
+      "It runs the command once per array element",
+      "It forces the hook to run asynchronously"
+    ],
+    "answer": [1],
+    "explanation": "With `args`, the hook uses exec form -- no shell is involved and special characters are passed verbatim. Without `args` it uses shell form, where the shell interprets pipes, &&, and globs.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-008",
+    "domain": "hooks",
+    "difficulty": 1,
+    "question": "Which placeholder resolves to the project root where the session started?",
+    "choices": [
+      "${CLAUDE_ROOT}",
+      "${CLAUDE_PROJECT_DIR}",
+      "${PWD}",
+      "${CLAUDE_WORKSPACE}"
+    ],
+    "answer": [1],
+    "explanation": "${CLAUDE_PROJECT_DIR} is the project root. ${CLAUDE_PLUGIN_ROOT} is a plugin's install directory and ${CLAUDE_PLUGIN_DATA} its persistent data directory. Using ${CLAUDE_PROJECT_DIR} keeps hook paths valid no matter which subdirectory Claude is working in.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-009",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "What does returning {\"continue\": false} from a hook do?",
+    "choices": [
+      "Skips the remaining hooks in this matcher group only",
+      "Stops all processing for the turn",
+      "Denies the tool call but lets Claude continue",
+      "Marks the hook as failed and retries it"
+    ],
+    "answer": [1],
+    "explanation": "`continue` defaults to true; setting it false stops all processing. It is a universal field, alongside systemMessage (shown to Claude in the transcript), additionalContext (added to the conversation) and hookSpecificOutput.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-010",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which places can define hooks? (select 3)",
+    "choices": [
+      ".claude/settings.json",
+      "Subagent frontmatter",
+      "A .hooksrc file in the home directory",
+      "Skill frontmatter"
+    ],
+    "answer": [0, 1, 3],
+    "explanation": "Hooks can come from user settings, project settings, project local settings, managed policy settings, a plugin's hooks/hooks.json, skill frontmatter (for the rest of the session) and subagent frontmatter (while the subagent runs). There is no .hooksrc.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  },
+  {
+    "id": "hook-011",
+    "domain": "hooks",
+    "difficulty": 3,
+    "question": "You want every Bash command to run without prompting EXCEPT a handful you consider dangerous. What is the documented approach?",
+    "choices": [
+      "Add \"Bash\" to allow, and register a PreToolUse hook that exits 2 for the dangerous commands",
+      "Add \"Bash\" to allow and narrower deny rules -- allow wins for everything else",
+      "Use bypassPermissions mode and a PostToolUse hook",
+      "It is not possible; allow and deny cannot be combined on one tool"
+    ],
+    "answer": [0],
+    "explanation": "A hook that exits with code 2 stops the tool call before permission rules are evaluated, so it overrides an allow rule. Adding \"Bash\" to allow and blocking the specific cases in a PreToolUse hook gives you a denylist with full expressive power. (Deny rules would also work for simple patterns, but a hook can inspect the whole command.)",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "hook-012",
+    "domain": "hooks",
+    "difficulty": 2,
+    "question": "Which of these are real Claude Code hook events? (select 3)",
+    "choices": [
+      "PreCompact",
+      "SubagentStop",
+      "PreMessageSend",
+      "PostToolUseFailure"
+    ],
+    "answer": [0, 1, 3],
+    "explanation": "PreCompact/PostCompact bracket context compaction, SubagentStart/SubagentStop bracket subagents, and PostToolUseFailure fires after a tool call fails (as distinct from PostToolUse, which fires after success). There is no PreMessageSend; the streaming-text event is MessageDisplay.",
+    "source": "https://code.claude.com/docs/en/hooks"
+  }
+]

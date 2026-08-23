@@ -1,0 +1,257 @@
+[
+  {
+    "id": "skill-001",
+    "domain": "skills",
+    "difficulty": 1,
+    "question": "What is the relationship between .claude/commands/deploy.md and .claude/skills/deploy/SKILL.md?",
+    "choices": [
+      "Commands are deprecated and no longer load",
+      "Both create /deploy and work the same way; skills add a directory for supporting files and richer frontmatter",
+      "Commands take precedence and shadow skills of the same name",
+      "Commands are user-invocable, skills are model-invocable only"
+    ],
+    "answer": [1],
+    "explanation": "Custom commands have been merged into skills. Existing .claude/commands/ files keep working; the skill form adds a directory for supporting files, frontmatter to control who invokes it, and automatic loading by Claude when relevant.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-002",
+    "domain": "skills",
+    "difficulty": 2,
+    "question": "In a skill body, what does $1 expand to?",
+    "choices": [
+      "The first argument",
+      "The second argument -- $N is shorthand for $ARGUMENTS[N] and indexing is 0-based",
+      "The literal string '$1'",
+      "The full argument string"
+    ],
+    "answer": [1],
+    "explanation": "$ARGUMENTS[N] is 0-based and $N is its shorthand, so $0 is the first argument and $1 the second. $ARGUMENTS alone expands to the whole argument string as typed. To write a literal '$1.00' in prose, escape it as \\$1.00.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-003",
+    "domain": "skills",
+    "difficulty": 2,
+    "question": "You invoke a skill with arguments, but the skill body never mentions $ARGUMENTS. What happens to your input?",
+    "choices": [
+      "It is discarded",
+      "Claude Code appends 'ARGUMENTS: <your input>' to the end of the skill content",
+      "The invocation errors",
+      "It is prepended to the skill content"
+    ],
+    "answer": [1],
+    "explanation": "If the placeholder is absent, Claude Code appends ARGUMENTS: <value> to the skill content so Claude still sees what you typed.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-004",
+    "domain": "skills",
+    "difficulty": 3,
+    "question": "How long does a skill's allowed-tools grant last?",
+    "choices": [
+      "For the whole session",
+      "Only for the turn that invoked the skill -- it clears when you send your next message",
+      "Until the skill is invoked again",
+      "Permanently, once written to settings"
+    ],
+    "answer": [1],
+    "explanation": "allowed-tools pre-approves tools for the turn that invokes the skill and clears at your next message, even though the skill's content stays in context for the session. To pre-approve for the whole session, add allow rules to permission settings instead.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-005",
+    "domain": "skills",
+    "difficulty": 2,
+    "question": "Which frontmatter field stops Claude from loading a skill on its own, leaving it user-invocable only?",
+    "choices": [
+      "user-invocable: false",
+      "disable-model-invocation: true",
+      "auto: false",
+      "allowed-tools: []"
+    ],
+    "answer": [1],
+    "explanation": "disable-model-invocation: true removes the skill from Claude's context so only you can trigger it -- the right setting for side-effecting workflows like /deploy or /commit. It also prevents the skill being preloaded into subagents. Note that user-invocable: false is the mirror image: Claude can still invoke it, but you cannot.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-006",
+    "domain": "skills",
+    "difficulty": 3,
+    "question": "After a skill is invoked, when does Claude Code re-read its SKILL.md file?",
+    "choices": [
+      "At the start of every turn",
+      "Never -- the rendered content enters the conversation once and stays for the session",
+      "Whenever the file changes on disk",
+      "Only if the skill sets reload: true"
+    ],
+    "answer": [1],
+    "explanation": "The rendered SKILL.md enters the conversation as a single message and persists for the rest of the session; Claude Code does not re-read the file on later turns. So write guidance that must apply throughout a task as standing instructions, not one-time steps.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-007",
+    "domain": "skills",
+    "difficulty": 3,
+    "question": "A skill ships a helper script and wants to run it without a permission prompt. Which pattern does this?",
+    "choices": [
+      "Use an absolute path in the body and add Bash(*) to allowed-tools",
+      "Use ${CLAUDE_SKILL_DIR} in both the body and the Bash rule in allowed-tools, so the rule matches the exact command",
+      "Set permissionMode: bypassPermissions in the skill frontmatter",
+      "Scripts bundled with a skill are always exempt from permission checks"
+    ],
+    "answer": [1],
+    "explanation": "Claude Code substitutes ${CLAUDE_SKILL_DIR} in two places: the skill's markdown body and the Bash rules in allowed-tools. Using it in both makes the allow rule match exactly the command the body tells Claude to run, e.g. allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/render.sh *).",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-008",
+    "domain": "skills",
+    "difficulty": 3,
+    "question": "Why should you review the allowed-tools of any skill checked into a repository before running Claude Code there?",
+    "choices": [
+      "Because workspace trust does not gate allowed-tools -- a project skill's grant applies whenever the skill is invoked, including in a -p run in an untrusted folder",
+      "Because allowed-tools silently rewrites your settings.json",
+      "Because allowed-tools cannot be disabled once the repo is cloned",
+      "It is not a concern -- allowed-tools only narrows access"
+    ],
+    "answer": [0],
+    "explanation": "Workspace trust does not gate this field. A skill can grant itself broad tool access and that grant applies even in a -p run in a folder you have never trusted, so a repository skill is a real supply-chain surface. (Note allowed-tools only widens access; disallowed-tools is the field that narrows it.)",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "skill-009",
+    "domain": "skills",
+    "difficulty": 2,
+    "question": "Which frontmatter key runs a skill in its own isolated subagent context?",
+    "choices": [
+      "isolation: worktree",
+      "context: fork",
+      "background: true",
+      "model: haiku"
+    ],
+    "answer": [1],
+    "explanation": "context: fork runs the skill in its own subagent context: the subagent receives the rendered skill content as its prompt, and only its result comes back to the main conversation. isolation: worktree is a subagent frontmatter field that gives an agent its own git worktree.",
+    "source": "https://code.claude.com/docs/en/skills"
+  },
+  {
+    "id": "agent-001",
+    "domain": "subagents",
+    "difficulty": 1,
+    "question": "Which two subagent frontmatter fields are required?",
+    "choices": [
+      "name and description",
+      "name and tools",
+      "description and model",
+      "name, description and tools"
+    ],
+    "answer": [0],
+    "explanation": "Only name (lowercase, hyphens) and description (when Claude should delegate to it) are required. tools, disallowedTools, model, permissionMode, skills, mcpServers, hooks, memory, maxTurns, background, isolation, effort and color are all optional.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-002",
+    "domain": "subagents",
+    "difficulty": 2,
+    "question": "A subagent's frontmatter omits `tools`. What tools does it get?",
+    "choices": [
+      "None -- it must opt in",
+      "Read, Grep and Glob only",
+      "It inherits all tools available to the session",
+      "Only tools listed in permissions.allow"
+    ],
+    "answer": [2],
+    "explanation": "Omitting tools inherits everything. Supply `tools` as an allowlist or `disallowedTools` as a denylist to narrow it. A small set is always removed from subagents regardless: Agent (at the depth limit), AskUserQuestion, EndConversation, EnterPlanMode/ExitPlanMode, ScheduleWakeup and Workflow.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-003",
+    "domain": "subagents",
+    "difficulty": 3,
+    "question": "What does a normal (non-fork) subagent NOT receive? (select 2)",
+    "choices": [
+      "The main conversation history",
+      "CLAUDE.md files",
+      "A git status snapshot",
+      "Skills previously invoked in the main session"
+    ],
+    "answer": [0, 3],
+    "explanation": "A non-fork subagent gets a fresh context: its own system prompt, the task message, CLAUDE.md (except for the Explore and Plan agents), a git status snapshot, any skills preloaded via its `skills` field, and the sibling agent roster. It does not get the main conversation history, output style preferences, auto memory, or skills invoked earlier in the main session. A fork, by contrast, inherits the full history.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-004",
+    "domain": "subagents",
+    "difficulty": 2,
+    "question": "What is the default value of a subagent's `model` field?",
+    "choices": [
+      "haiku, to control cost",
+      "sonnet",
+      "inherit -- it uses the main session's model",
+      "opus"
+    ],
+    "answer": [2],
+    "explanation": "model defaults to `inherit`. You can set sonnet, opus, haiku, fable, or a full model ID -- routing a verbose, mechanical subagent to a faster model is one of the main cost levers.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-005",
+    "domain": "subagents",
+    "difficulty": 2,
+    "question": "Which invocation GUARANTEES a specific subagent runs, rather than letting Claude decide?",
+    "choices": [
+      "Describing the task and hoping the description matches",
+      "@-mentioning it, e.g. '@code-reviewer look at the auth changes'",
+      "Setting background: true",
+      "Adding it to permissions.allow"
+    ],
+    "answer": [1],
+    "explanation": "@-mention guarantees a specific subagent runs. Automatic delegation relies on Claude matching the task to the description. You can also make one the main agent for a whole session with `claude --agent code-reviewer`, or define agents inline with `claude --agents '{...}'`.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-006",
+    "domain": "subagents",
+    "difficulty": 3,
+    "question": "Order subagent definition sources from HIGHEST to LOWEST precedence.",
+    "choices": [
+      "Managed settings, --agents flag, .claude/agents/, ~/.claude/agents/, plugin agents/",
+      "~/.claude/agents/, .claude/agents/, --agents flag, plugin agents/, managed settings",
+      ".claude/agents/, ~/.claude/agents/, managed settings, --agents flag, plugin agents/",
+      "Plugin agents/, managed settings, --agents flag, .claude/agents/, ~/.claude/agents/"
+    ],
+    "answer": [0],
+    "explanation": "Managed (organization-wide) settings win, then the session-only --agents CLI flag, then project .claude/agents/, then user ~/.claude/agents/, then plugin agents/ directories.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-007",
+    "domain": "subagents",
+    "difficulty": 2,
+    "question": "What distinguishes a fork from an ordinary subagent?",
+    "choices": [
+      "A fork runs in a separate git worktree",
+      "A fork inherits the full conversation history, system prompt, tools and model, and shares the parent's prompt cache",
+      "A fork can only use read-only tools",
+      "A fork always runs in the background"
+    ],
+    "answer": [1],
+    "explanation": "Forks inherit the parent's full conversation history, system prompt, tools and model, and share its prompt cache -- so they are cheap to spawn but not context-isolated. Ordinary subagents start from a fresh context window. A separate git worktree is the isolation: worktree field, which is independent of forking.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "agent-008",
+    "domain": "subagents",
+    "difficulty": 1,
+    "question": "Which built-in subagent is read-only and intended for fast codebase exploration?",
+    "choices": [
+      "general-purpose",
+      "Explore",
+      "Plan",
+      "code-reviewer"
+    ],
+    "answer": [1],
+    "explanation": "Explore is the read-only exploration agent (its model is inherited but capped at Opus). Plan does research for plan mode, and general-purpose handles complex multi-step tasks. code-reviewer is a common custom agent, not a built-in.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  }
+]

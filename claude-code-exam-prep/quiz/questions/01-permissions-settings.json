@@ -1,0 +1,227 @@
+[
+  {
+    "id": "perm-001",
+    "domain": "permissions",
+    "difficulty": 1,
+    "question": "In what order does Claude Code evaluate permission rules?",
+    "choices": [
+      "allow, then ask, then deny",
+      "deny, then ask, then allow",
+      "Most specific rule wins, regardless of type",
+      "ask, then deny, then allow"
+    ],
+    "answer": [1],
+    "explanation": "Rules are evaluated deny, then ask, then allow. The first match in that order decides the outcome, and rule specificity does not change the order -- so a broad deny like Bash(aws *) still blocks a call that a narrower allow like Bash(aws s3 ls) also matches.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-002",
+    "domain": "permissions",
+    "difficulty": 2,
+    "question": "You add the allow rule Bash(ls *). Which commands does it match?",
+    "choices": [
+      "Both 'ls -la' and 'lsof'",
+      "'ls -la' but not 'lsof'",
+      "'lsof' but not 'ls -la'",
+      "Neither -- a trailing wildcard is invalid in an allow rule"
+    ],
+    "answer": [1],
+    "explanation": "A '*' at the end preceded by a space enforces a word boundary: the prefix must be followed by a space or end-of-string. Bash(ls *) matches 'ls -la' but not 'lsof'. Written without the space, Bash(ls*) matches both.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-003",
+    "domain": "permissions",
+    "difficulty": 3,
+    "question": "An allow rule Bash(safe-cmd *) is in place. Claude proposes running 'safe-cmd && rm -rf /tmp/x'. What happens?",
+    "choices": [
+      "It runs -- the rule matched the start of the command",
+      "It does not auto-approve: Claude Code splits on shell operators and each subcommand must match a rule independently",
+      "It runs, but only the first subcommand executes",
+      "Claude Code rejects the rule at startup as unsafe"
+    ],
+    "answer": [1],
+    "explanation": "Claude Code is aware of shell operators. The recognized separators are &&, ||, ;, |, |&, & and newlines, and a rule must match each subcommand independently, so the compound command is not auto-approved.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-004",
+    "domain": "permissions",
+    "difficulty": 3,
+    "question": "Which command prefixes does Claude Code strip before matching a Bash permission rule? (select 2)",
+    "choices": [
+      "timeout",
+      "docker exec",
+      "npx",
+      "nice"
+    ],
+    "answer": [0, 3],
+    "explanation": "The built-in, non-configurable wrapper list is timeout, time, nice, nohup and stdbuf, plus the shell builtins command and builtin, zsh's noglob, and bare xargs. Environment runners such as npx, docker exec, devbox run, direnv exec and mise exec are NOT stripped -- which is why Bash(devbox run *) would match 'devbox run rm -rf .'.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-005",
+    "domain": "permissions",
+    "difficulty": 2,
+    "question": "You want to stop Claude from reading .env files. Which rule works?",
+    "choices": [
+      "deny: Read(./.env)",
+      "deny: Write(./.env)",
+      "deny: Glob(./.env)",
+      "deny: NotebookEdit(./.env)"
+    ],
+    "answer": [0],
+    "explanation": "File permission checks consult only Edit(path) and Read(path) rules. Path rules written for Write, NotebookEdit, Glob or the legacy MultiEdit are accepted but never consulted, and Claude Code warns at startup. Use Read(...) to block reads and Edit(...) to block writes.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-006",
+    "domain": "permissions",
+    "difficulty": 3,
+    "question": "Why does Claude Code ignore the rule Bash(command:rm *) and warn at startup?",
+    "choices": [
+      "'command' is a reserved shell builtin name",
+      "Tool(param:value) rules cannot match a tool's primary content field, because a compound command would bypass them",
+      "Parameter rules only work on MCP tools",
+      "The rule is valid but only in managed settings"
+    ],
+    "answer": [1],
+    "explanation": "Deny and ask rules can match a top-level parameter with Tool(param:value), but not the tool's primary content field -- command for Bash/PowerShell, file_path for Read/Edit/Write, path for Grep/Glob, notebook_path for NotebookEdit, url for WebFetch. A rule like Bash(command:rm *) would be bypassable by a compound command, so it is ignored. Write Bash(rm *) instead.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-007",
+    "domain": "permissions",
+    "difficulty": 2,
+    "question": "Which MCP allow rule actually auto-approves tools?",
+    "choices": [
+      "mcp__*",
+      "mcp__github__get_*",
+      "\"*\"",
+      "mcp__*__get_issue"
+    ],
+    "answer": [1],
+    "explanation": "Allow rules accept tool-name globs only after a literal mcp__<server>__ prefix, and the server segment must be glob-free. mcp__github__get_* and mcp__puppeteer__* work. Unanchored globs such as \"*\", \"B*\" or \"mcp__*\" are skipped with a warning and approve nothing.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-008",
+    "domain": "permissions",
+    "difficulty": 2,
+    "question": "Which permission mode auto-DENIES any tool that has not been pre-approved?",
+    "choices": [
+      "plan",
+      "acceptEdits",
+      "dontAsk",
+      "bypassPermissions"
+    ],
+    "answer": [2],
+    "explanation": "dontAsk auto-denies tools unless they are pre-approved via /permissions or permissions.allow. bypassPermissions does the opposite -- it skips prompts. acceptEdits auto-accepts file edits plus common filesystem commands (mkdir, touch, mv, cp) in the working directories.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-009",
+    "domain": "permissions",
+    "difficulty": 3,
+    "question": "A PreToolUse hook returns permissionDecision \"allow\" for a Bash call, but a project deny rule also matches it. What happens?",
+    "choices": [
+      "The hook wins and the call runs",
+      "The deny rule wins and the call is blocked",
+      "The user is prompted to break the tie",
+      "Claude Code errors and ends the turn"
+    ],
+    "answer": [1],
+    "explanation": "Hook decisions do not bypass permission rules. Claude Code evaluates deny and ask rules regardless of what a PreToolUse hook returns, preserving deny-first precedence. The reverse is also worth knowing: a hook that exits with code 2 blocks the call before permission rules are evaluated, so it overrides an allow rule.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "perm-010",
+    "domain": "permissions",
+    "difficulty": 2,
+    "question": "What does a bare deny rule for a tool name, such as deny: Bash, do that deny: Bash(rm *) does not?",
+    "choices": [
+      "Nothing -- they are equivalent",
+      "It removes the tool from Claude's context entirely, so Claude never sees it",
+      "It applies only in bypassPermissions mode",
+      "It blocks the tool for subagents only"
+    ],
+    "answer": [1],
+    "explanation": "A bare tool name in deny removes the tool from Claude's context entirely. A scoped rule like Bash(rm *) leaves the tool available and blocks only matching calls. Bare-name removal applies to every tool except EndConversation, which cannot be removed while any other tool remains.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  },
+  {
+    "id": "set-001",
+    "domain": "settings",
+    "difficulty": 2,
+    "question": "Order these settings sources from HIGHEST to LOWEST precedence.",
+    "choices": [
+      "Managed, command line (--settings), project local, shared project, user",
+      "User, shared project, project local, command line, managed",
+      "Command line, managed, user, shared project, project local",
+      "Shared project, project local, user, managed, command line"
+    ],
+    "answer": [0],
+    "explanation": "Precedence runs: managed settings (organization) > command line --settings > .claude/settings.local.json > .claude/settings.json > ~/.claude/settings.json. Nothing overrides managed settings, not even a --settings flag.",
+    "source": "https://code.claude.com/docs/en/settings"
+  },
+  {
+    "id": "set-002",
+    "domain": "settings",
+    "difficulty": 2,
+    "question": "You set permissions.allow in both your user settings and the project's settings.json. What happens?",
+    "choices": [
+      "The higher-precedence file's list replaces the other",
+      "The lists merge -- both files' entries apply",
+      "Claude Code reports a settings conflict error",
+      "Only the user file is read"
+    ],
+    "answer": [1],
+    "explanation": "List keys such as permissions.allow merge across scopes instead of overriding, so each file can add entries without removing another's. Scalar keys follow normal precedence.",
+    "source": "https://code.claude.com/docs/en/settings"
+  },
+  {
+    "id": "set-003",
+    "domain": "settings",
+    "difficulty": 3,
+    "question": "A teammate clones your repo with committed .claude/settings.json. Which rules take effect BEFORE they trust the folder? (select 2)",
+    "choices": [
+      "deny rules",
+      "ask rules",
+      "permissions.allow rules",
+      "permissions.additionalDirectories"
+    ],
+    "answer": [0, 1],
+    "explanation": "deny and ask rules apply right away. permissions.allow, permissions.additionalDirectories, extraKnownMarketplaces and most env values wait until each teammate trusts the folder -- the safe default, since an allow rule from an untrusted repo would otherwise widen access silently.",
+    "source": "https://code.claude.com/docs/en/settings"
+  },
+  {
+    "id": "set-004",
+    "domain": "settings",
+    "difficulty": 1,
+    "question": "Which is true of Claude Code settings files?",
+    "choices": [
+      "They are JSON5 and accept // comments",
+      "They are strict JSON -- a // comment or trailing comma is a syntax error",
+      "They are YAML",
+      "They accept either JSON or TOML"
+    ],
+    "answer": [1],
+    "explanation": "Settings files are strict JSON. A // comment or a trailing comma is a syntax error and Claude Code reports a Settings Error at the next start.",
+    "source": "https://code.claude.com/docs/en/settings"
+  },
+  {
+    "id": "set-005",
+    "domain": "settings",
+    "difficulty": 2,
+    "question": "You chose 'Yes, and don't ask again' on a Bash prompt, but Claude Code keeps asking. What is the most likely cause?",
+    "choices": [
+      "The approval was never saved",
+      "An ask rule from project or managed settings outranks the allow rule saved to your local file",
+      "Local settings files are ignored in git repositories",
+      "The approval expires after one session"
+    ],
+    "answer": [1],
+    "explanation": "That choice writes an allow rule to .claude/settings.local.json, and an allow rule there does not outrank an ask rule from a project or managed file -- rules are evaluated deny, then ask, then allow.",
+    "source": "https://code.claude.com/docs/en/settings"
+  }
+]

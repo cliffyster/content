@@ -1,0 +1,242 @@
+[
+  {
+    "id": "api-001",
+    "domain": "claude-api",
+    "difficulty": 1,
+    "question": "Which endpoint do tool use, extended thinking, prompt caching and structured outputs all go through?",
+    "choices": [
+      "Each has its own endpoint",
+      "POST /v1/messages -- they are features of that single endpoint",
+      "POST /v1/completions",
+      "POST /v1/agents"
+    ],
+    "answer": [1],
+    "explanation": "Everything goes through POST /v1/messages. Batches, Files, Token Counting and Models are supporting endpoints that feed into it, not alternatives to it.",
+    "source": "https://docs.claude.com/en/api/messages"
+  },
+  {
+    "id": "api-002",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "Why is reading response.content[0].text a common bug?",
+    "choices": [
+      "content is a string, not a list",
+      "content is a LIST of blocks -- thinking, text, tool_use -- so block 0 is often not text",
+      "text is spelled 'message' on the block",
+      "content is only populated when streaming"
+    ],
+    "answer": [1],
+    "explanation": "response.content is a list of content block objects. With thinking enabled the first block is usually a thinking block. Iterate and check block.type before reading .text.",
+    "source": "https://docs.claude.com/en/api/messages"
+  },
+  {
+    "id": "api-003",
+    "domain": "prompt-caching",
+    "difficulty": 2,
+    "question": "Prompt caching is a prefix match. Where should volatile content (timestamps, per-request IDs, the user's question) go?",
+    "choices": [
+      "At the very start, so the model sees it first",
+      "After the last cache_control breakpoint",
+      "Anywhere -- the cache keys on content, not position",
+      "In the tools array"
+    ],
+    "answer": [1],
+    "explanation": "Render order is tools, then system, then messages. Any byte change in the cached prefix invalidates everything after it, so stable content goes first and volatile content goes after the last breakpoint. A datetime.now() at the top of a system prompt destroys the whole cache.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "api-004",
+    "domain": "prompt-caching",
+    "difficulty": 2,
+    "question": "Which usage field tells you the cache was actually hit?",
+    "choices": [
+      "usage.input_tokens",
+      "usage.cache_read_input_tokens",
+      "usage.cache_creation_input_tokens",
+      "usage.output_tokens"
+    ],
+    "answer": [1],
+    "explanation": "cache_read_input_tokens counts tokens served from cache (~0.1x cost). cache_creation_input_tokens counts tokens written to it (~1.25x cost). If cache_read stays zero across repeated identical-prefix requests, a silent invalidator is at work.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "api-005",
+    "domain": "claude-api",
+    "difficulty": 3,
+    "question": "Claude returns a message containing three tool_use blocks. How do you return the results?",
+    "choices": [
+      "One user message per tool_result, in order",
+      "All three tool_result blocks in a SINGLE user message",
+      "As a system message",
+      "Assign them to the assistant role"
+    ],
+    "answer": [1],
+    "explanation": "Return all tool_result blocks in one user message. Splitting them across several messages silently trains Claude to stop making parallel calls. A failed tool still gets a tool_result, with is_error: true -- do not drop it.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/tool-use"
+  },
+  {
+    "id": "api-006",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "Which stop_reason means Claude wants you to execute a tool and continue the loop?",
+    "choices": [
+      "end_turn",
+      "tool_use",
+      "pause_turn",
+      "max_tokens"
+    ],
+    "answer": [1],
+    "explanation": "tool_use means execute the tool and send results back. end_turn means Claude is finished. pause_turn means a server-side tool paused and the turn can be resumed. refusal means a safety decline -- check stop_details, which is populated only for refusals.",
+    "source": "https://docs.claude.com/en/api/messages"
+  },
+  {
+    "id": "sdk-001",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "What is the difference between the SDK's Tool Runner and the Claude Agent SDK?",
+    "choices": [
+      "They are two names for the same package",
+      "Tool Runner is a helper in the Anthropic API SDK that loops over tools YOU define; the Claude Agent SDK is a separate package that ships the Claude Code harness with built-in file/bash tools",
+      "Tool Runner is hosted by Anthropic; the Agent SDK runs locally",
+      "Tool Runner is for Python only; the Agent SDK is for TypeScript only"
+    ],
+    "answer": [1],
+    "explanation": "Tool Runner (client.beta.messages.tool_runner) is a thin helper over POST /v1/messages -- no built-in tools, no sandbox, you supply every tool. The Claude Agent SDK (claude-agent-sdk / @anthropic-ai/claude-agent-sdk) is Claude Code as a library, with Read/Write/Edit/Bash/Glob/Grep, subagents, hooks and permissions. Both are harness-only: you host and deploy them yourself.",
+    "source": "https://code.claude.com/docs/en/agent-sdk"
+  },
+  {
+    "id": "sdk-002",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "Which agent-building approach gives you BOTH a managed agent loop and Anthropic-hosted infrastructure to run tools on?",
+    "choices": [
+      "Claude API with a manual while-loop",
+      "The SDK Tool Runner",
+      "Managed Agents",
+      "The Claude Agent SDK"
+    ],
+    "answer": [2],
+    "explanation": "Two questions separate the four approaches: who supplies the harness, and who supplies the deployment. The manual loop supplies neither; Tool Runner and the Claude Agent SDK supply a harness but you still host it. Only Managed Agents supplies both -- Anthropic runs the loop and hosts a per-session sandbox.",
+    "source": "https://docs.claude.com/en/docs/agents"
+  },
+  {
+    "id": "sdk-003",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "Before reaching for an agent instead of a single call or a scripted workflow, which should you check? (select 3)",
+    "choices": [
+      "Complexity -- is the task multi-step and hard to fully specify in advance?",
+      "Value -- does the outcome justify higher cost and latency?",
+      "Cost of error -- can mistakes be caught and recovered from?",
+      "Novelty -- has anyone built this with an agent before?"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "The four criteria are complexity, value, viability (is Claude capable at this task type) and cost of error. If any answer is no, stay at a simpler tier. Novelty is not a criterion -- agents cost more and fail in more ways, so the default should be the simplest tier that works.",
+    "source": "https://docs.claude.com/en/docs/agents"
+  },
+  {
+    "id": "cost-001",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "Where does the `effort` parameter belong on a Messages API request?",
+    "choices": [
+      "Top level, alongside model and max_tokens",
+      "Inside output_config, e.g. output_config: {effort: \"high\"}",
+      "Inside the thinking object",
+      "As an HTTP header"
+    ],
+    "answer": [1],
+    "explanation": "effort goes inside output_config: output_config={\"effort\": \"low\"|\"medium\"|\"high\"|\"xhigh\"|\"max\"}. It controls thinking depth and overall token spend and defaults to high. Pairing adaptive thinking with a lower effort is usually a better cost lever than disabling thinking.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/extended-thinking"
+  },
+  {
+    "id": "cost-002",
+    "domain": "models-and-cost",
+    "difficulty": 3,
+    "question": "A colleague's code sets thinking={\"type\": \"enabled\", \"budget_tokens\": 8000} against a current Opus model. What happens?",
+    "choices": [
+      "It works as written",
+      "It returns a 400 -- budget_tokens is removed on the current models; use adaptive thinking with output_config.effort",
+      "It is silently ignored",
+      "It forces the model to think for exactly 8000 tokens"
+    ],
+    "answer": [1],
+    "explanation": "The fixed thinking-budget concept is superseded by adaptive thinking. budget_tokens is rejected with a 400 on the current model generation and deprecated on the one before it. Use thinking={\"type\": \"adaptive\"} and control spend with output_config.effort.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/extended-thinking"
+  },
+  {
+    "id": "cost-003",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "How should you count tokens in a prompt before sending it?",
+    "choices": [
+      "Use tiktoken",
+      "Use client.messages.count_tokens with the same model, messages and system",
+      "Divide the character count by four",
+      "Send the request and read usage.input_tokens"
+    ],
+    "answer": [1],
+    "explanation": "count_tokens (POST /v1/messages/count_tokens) is the only accurate way -- tiktoken is OpenAI's tokenizer and does not match Claude's, and chars/4 is a rough estimate at best. Model generations can also change tokenizer, so re-baseline when you migrate.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/token-counting"
+  },
+  {
+    "id": "cost-004",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "Which surface processes requests asynchronously at roughly 50% cost, for work that is not latency sensitive?",
+    "choices": [
+      "The Batches API",
+      "Priority Tier",
+      "Fast mode",
+      "Prompt caching"
+    ],
+    "answer": [0],
+    "explanation": "Message Batches run asynchronously at about half price -- submit requests with custom_ids, poll until processing_status is 'ended', then stream results. Results arrive in any order, so key them by custom_id, never by position. Fast mode is the opposite trade: higher throughput at premium pricing.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/batch-processing"
+  },
+  {
+    "id": "struct-001",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "What is the recommended way to get a validated, typed object back from the Messages API in Python?",
+    "choices": [
+      "Ask for JSON in the prompt and json.loads() the text",
+      "client.messages.parse(..., output_format=YourPydanticModel) and read response.parsed_output",
+      "Prefill the assistant turn with an opening brace",
+      "Use a regex over the response text"
+    ],
+    "answer": [1],
+    "explanation": "messages.parse() with a Pydantic model constrains the response and returns a validated instance on .parsed_output, removing the brittle parse step. Note that assistant prefill -- the old trick of seeding the response with '{' -- returns a 400 on current models.",
+    "source": "https://docs.claude.com/en/docs/build-with-claude/structured-outputs"
+  },
+  {
+    "id": "sec-001",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "What is the safest way to give an agent access to a secret it needs to call an external API?",
+    "choices": [
+      "Put the secret in the system prompt so Claude can use it",
+      "Keep the credential out of the model's context: hold it host-side in the tool implementation, or use a vault credential substituted at egress",
+      "Base64-encode it in the tool description",
+      "Pass it as a tool input so the call is auditable"
+    ],
+    "answer": [1],
+    "explanation": "Anything in the context window can be echoed back out, quoted in a response, or extracted by prompt injection. Keep credentials outside the model's context: the tool implementation holds them host-side, or a vault stores them and substitutes them at egress so they never enter the sandbox.",
+    "source": "https://docs.claude.com/en/docs/agents"
+  },
+  {
+    "id": "sec-002",
+    "domain": "security",
+    "difficulty": 3,
+    "question": "Your agent reads GitHub issue text and then takes actions. What is the core risk, and the right mitigation?",
+    "choices": [
+      "There is none -- issue text is just data",
+      "Prompt injection: treat fetched content as untrusted data, never as instructions, and gate consequential actions behind permissions or human approval",
+      "Token cost; truncate the issue text",
+      "Rate limits; cache the issue text"
+    ],
+    "answer": [1],
+    "explanation": "Any content the model fetches -- issue bodies, review comments, CI logs, web pages, MCP tool output -- is attacker-influenced. It must be treated as data, not instructions, and the blast radius limited by permission rules, tool allowlists, and approval gates on consequential actions.",
+    "source": "https://code.claude.com/docs/en/permissions"
+  }
+]

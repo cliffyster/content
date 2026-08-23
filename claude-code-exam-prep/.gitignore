@@ -1,0 +1,25 @@
+# Learner progress -- personal state, not repo content
+.quiz-progress.json
+.quiz-progress.json.tmp
+
+# Study journal written by the lab-02 skill
+notes/journal.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Local Claude Code settings (personal permission approvals)
+.claude/settings.local.json
+
+# Secrets
+.env
+.env.*
+secrets/
+
+# OS
+.DS_Store
