@@ -5,12 +5,25 @@ sandbox for the things it tests. The repo is deliberately self-referential: the
 `.claude/` directory is a live example of every extensibility feature on the
 syllabus, so studying hooks means reading a hook that is actually running.
 
+**New to Claude Code? Start with [the course](course/)** — 24 lessons in 5
+modules, ordered so each builds on the last, published as an interactive page
+with gated checks. Learn there first; the notes and the drill engine below are
+for looking things up and for retention afterwards.
+
 ```bash
 git clone <this repo> && cd claude-code-exam-prep
 python3 -m quiz domains        # what's in the bank
 python3 -m quiz drill          # start drilling (no dependencies)
 python3 -m unittest discover -s tests
 ```
+
+### Three things, three jobs
+
+| | For |
+|---|---|
+| [`course/`](course/) | **Learning it the first time** — ordered, one idea per lesson |
+| [`notes/`](notes/) | **Looking things up** — by topic, dense, assumes familiarity |
+| [`quiz/`](quiz/) | **Retention** — spaced repetition once you have learned it |
 
 The drill engine is **stdlib only**. Only the `sandbox/` scripts need
 `pip install anthropic`.
@@ -19,6 +32,7 @@ The drill engine is **stdlib only**. Only the `sandbox/` scripts need
 
 | | |
 |---|---|
+| [`course/`](course/) | A 24-lesson taught sequence, zero to exam depth, with gated checks |
 | [`notes/`](notes/) | 21 sourced study notes across every exam domain — see the [index](notes/README.md) |
 | [`quiz/`](quiz/) | A spaced-repetition drill CLI (SM-2) over 188 questions in 19 domains, each with an explanation and a doc link |
 | [`labs/`](labs/) | Seven build-it-yourself exercises with solutions and answer notes |

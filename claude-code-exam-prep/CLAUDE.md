@@ -20,6 +20,9 @@ python3 -m unittest discover -s tests    # the full suite (fast, no deps)
   Ids must be globally unique across all files and match `^[a-z]+-\d{3}$`;
   `answer` is a list of 0-based choice indices; `difficulty` is 1, 2 or 3.
   Every domain needs at least two questions — the suite enforces all of this.
+- `course/` — the taught 24-lesson sequence. Content is authored in
+  `build_part*.py` (readable Python, not raw JSON); `./assemble.sh` regenerates
+  `course.json` and the published `course.html`.
 - `notes/` — study notes, one per domain.
 - `labs/` — exercises, each with a `solution/`.
 - `sandbox/` — Anthropic SDK scripts. The only code here that needs

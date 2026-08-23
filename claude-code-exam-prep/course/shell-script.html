@@ -1,0 +1,390 @@
+<script>
+(function () {
+  "use strict";
+  const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+  const KEY = "ccpath-v1";
+  const el = (id) => document.getElementById(id);
+
+  // Flatten the module tree into a single ordered lesson list.
+  const FLAT = [];
+  COURSE.forEach((m, mi) =>
+    m.lessons.forEach((l) => FLAT.push({ ...l, mod: m, modIndex: mi }))
+  );
+  const TOTAL = FLAT.length;
+
+  const save = {
+    read() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } },
+    write(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} },
+    wipe() { try { localStorage.removeItem(KEY); } catch (e) {} }
+  };
+
+  let state = save.read() || { done: [], at: null };
+  if (!Array.isArray(state.done)) state.done = [];
+
+  const isDone = (id) => state.done.includes(id);
+  const unlockedCount = () => {
+    // A lesson is reachable once every lesson before it is done.
+    let n = 0;
+    while (n < TOTAL && isDone(FLAT[n].id)) n++;
+    return n; // index of the first not-yet-done lesson
+  };
+  const isUnlocked = (i) => i <= unlockedCount();
+
+  let cursor = null;          // null = intro screen
+  let answered = {};          // per-render check state
+
+  // ---------------------------------------------------------------- rail
+  function renderNav() {
+    const nav = el("nav");
+    nav.textContent = "";
+    let idx = 0;
+    COURSE.forEach((m, mi) => {
+      const wrap = document.createElement("div");
+      wrap.className = "mod";
+      const h = document.createElement("div");
+      h.className = "mod-h";
+      const n = document.createElement("span");
+      n.className = "n";
+      n.textContent = "0" + (mi + 1);
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = m.title;
+      h.append(n, t);
+      const ol = document.createElement("ol");
+
+      m.lessons.forEach((l) => {
+        const i = idx++;
+        const li = document.createElement("li");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "nav-l" + (isDone(l.id) ? " done" : "");
+        b.disabled = !isUnlocked(i);
+        if (cursor === i) b.setAttribute("aria-current", "true");
+        const st = document.createElement("span");
+        st.className = "st";
+        const tx = document.createElement("span");
+        tx.textContent = l.title;
+        b.append(st, tx);
+        b.addEventListener("click", () => { go(i); closeRail(); });
+        li.appendChild(b);
+        ol.appendChild(li);
+      });
+      wrap.append(h, ol);
+      nav.appendChild(wrap);
+    });
+
+    const d = state.done.length;
+    el("meter-fill").style.width = (100 * d / TOTAL) + "%";
+    el("meter-done").textContent = d + " of " + TOTAL;
+    el("meter-pct").textContent = Math.round(100 * d / TOTAL) + "%";
+  }
+
+  // ---------------------------------------------------------------- intro
+  function renderIntro() {
+    const v = el("view");
+    v.textContent = "";
+    const done = state.done.length;
+
+    const crumb = document.createElement("div");
+    crumb.className = "crumb";
+    crumb.innerHTML = '<span class="eyebrow">Claude Certified Developer</span>' +
+      '<span class="sep">/</span><span class="eyebrow">Foundations first</span>';
+
+    const h = document.createElement("h2");
+    h.className = "lesson-t";
+    h.textContent = done ? "Welcome back" : "Start here";
+
+    const p = document.createElement("div");
+    p.className = "teach";
+    p.innerHTML = done
+      ? "<p>You have completed <b>" + done + " of " + TOTAL + "</b> lessons. Pick up where you left off, or revisit anything you have already finished from the contents list.</p>"
+      : "<p>This is a taught sequence, not a pile of reference material. Each lesson introduces <b>one idea</b>, shows it working, then checks you have it before the next unlocks. It assumes you have never used Claude Code.</p>" +
+        "<p>Twenty-four lessons in five modules. Expect roughly ten minutes each. The checks are not decoration &mdash; getting one wrong tells you to reread the section above it, which is the whole point.</p>";
+
+    const map = document.createElement("div");
+    map.className = "map";
+    COURSE.forEach((m, i) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      const n = document.createElement("span"); n.className = "n"; n.textContent = "0" + (i + 1);
+      const t = document.createElement("span"); t.className = "t"; t.textContent = m.title;
+      const d = document.createElement("span"); d.className = "d"; d.textContent = m.blurb;
+      row.append(n, t, d);
+      map.appendChild(row);
+    });
+
+    const nav = document.createElement("div");
+    nav.className = "foot-nav";
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.type = "button";
+    const next = unlockedCount();
+    b.textContent = done ? "Continue to lesson " + (next + 1) : "Begin lesson 1";
+    b.addEventListener("click", () => go(Math.min(next, TOTAL - 1)));
+    nav.appendChild(b);
+
+    v.append(crumb, h, p, map, nav);
+    el("mob-pos").textContent = done + "/" + TOTAL;
+    window.scrollTo(0, 0);
+  }
+
+  // --------------------------------------------------------------- lesson
+  function renderLesson(i) {
+    const L = FLAT[i];
+    const v = el("view");
+    v.textContent = "";
+    answered = {};
+
+    const crumb = document.createElement("div");
+    crumb.className = "crumb";
+    crumb.innerHTML =
+      '<span class="eyebrow">' + esc(L.mod.title) + "</span>" +
+      '<span class="sep">/</span>' +
+      '<span class="eyebrow">Lesson ' + (i + 1) + " of " + TOTAL + "</span>";
+
+    const h = document.createElement("h2");
+    h.className = "lesson-t";
+    h.textContent = L.title;
+
+    const obj = document.createElement("div");
+    obj.className = "obj";
+    obj.innerHTML = '<span class="lbl">You will be able to</span><p>' + esc(L.objective) + "</p>";
+
+    const teach = document.createElement("div");
+    teach.className = "teach";
+    teach.innerHTML = L.teach;
+
+    v.append(crumb, h, obj, teach);
+
+    if (L.example) {
+      const ex = document.createElement("div");
+      ex.className = "ex";
+      const eh = document.createElement("div");
+      eh.className = "ex-h";
+      eh.innerHTML = '<span class="eyebrow">' + esc(L.example.label) + "</span>";
+      const pre = document.createElement("pre");
+      const codeEl = document.createElement("code");
+      codeEl.textContent = L.example.code;
+      pre.appendChild(codeEl);
+      ex.append(eh, pre);
+      v.appendChild(ex);
+    }
+
+    const take = document.createElement("div");
+    take.className = "take";
+    take.innerHTML = '<span class="lbl">Remember</span><p>' + esc(L.takeaway) + "</p>";
+    v.appendChild(take);
+
+    // ---- checks
+    const box = document.createElement("div");
+    box.className = "checks";
+    const ch = document.createElement("div");
+    ch.className = "checks-h";
+    ch.innerHTML = "<h3>Check yourself</h3>";
+    const sub = document.createElement("p");
+    sub.className = "checks-sub";
+    sub.textContent = isDone(L.id)
+      ? "You have already passed this lesson. Answer again if you want the practice."
+      : "Answer " + (L.checks.length === 1 ? "this" : "all " + L.checks.length) +
+        " correctly to unlock the next lesson. Wrong answers explain themselves — try again after reading.";
+    box.append(ch, sub);
+
+    L.checks.forEach((c, ci) => box.appendChild(buildCheck(L, c, ci)));
+    v.appendChild(box);
+
+    // ---- footer nav
+    const nav = document.createElement("div");
+    nav.className = "foot-nav";
+    const prev = document.createElement("button");
+    prev.className = "btn ghost";
+    prev.type = "button";
+    prev.textContent = "Previous";
+    prev.disabled = i === 0;
+    prev.addEventListener("click", () => go(i - 1));
+
+    const next = document.createElement("button");
+    next.className = "btn";
+    next.type = "button";
+    next.id = "btn-next";
+    next.textContent = i === TOTAL - 1 ? "Finish course" : "Next lesson";
+    next.disabled = !isDone(L.id);
+    next.addEventListener("click", () => {
+      if (i === TOTAL - 1) { cursor = null; renderIntro(); renderNav(); }
+      else go(i + 1);
+    });
+
+    const gate = document.createElement("span");
+    gate.className = "gate";
+    gate.id = "gate";
+    gate.textContent = isDone(L.id) ? "lesson complete" : "complete the check to continue";
+
+    nav.append(prev, next, gate);
+    v.appendChild(nav);
+
+    el("mob-pos").textContent = (i + 1) + "/" + TOTAL;
+    window.scrollTo(0, 0);
+  }
+
+  function buildCheck(L, c, ci) {
+    const wrap = document.createElement("div");
+    wrap.className = "chk";
+    const n = document.createElement("span");
+    n.className = "qn";
+    n.textContent = "Question " + (ci + 1) + " of " + L.checks.length;
+    const q = document.createElement("p");
+    q.className = "qt";
+    q.textContent = c.q;
+    const opts = document.createElement("div");
+    opts.className = "opts";
+    wrap.append(n, q, opts);
+
+    const multi = c.answer.length > 1;
+    let picked = new Set();
+    let locked = false;
+
+    const nodes = c.choices.map((choice, oi) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      const mk = document.createElement("span");
+      mk.className = "mk";
+      mk.textContent = LETTERS[oi] + ")";
+      const tx = document.createElement("span");
+      tx.textContent = choice;
+      b.append(mk, tx);
+      b.addEventListener("click", () => {
+        if (locked) return;
+        if (multi) {
+          if (picked.has(oi)) { picked.delete(oi); b.classList.remove("sel"); }
+          else { picked.add(oi); b.classList.add("sel"); }
+          submit.disabled = picked.size !== c.answer.length;
+        } else { picked = new Set([oi]); grade(); }
+      });
+      opts.appendChild(b);
+      return b;
+    });
+
+    let multiNote, submit;
+    if (multi) {
+      multiNote = document.createElement("p");
+      multiNote.className = "multi";
+      multiNote.textContent = "select " + c.answer.length;
+      wrap.appendChild(multiNote);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "chk-actions";
+    submit = document.createElement("button");
+    submit.className = "btn sm";
+    submit.type = "button";
+    submit.textContent = "Check";
+    submit.disabled = true;
+    submit.hidden = !multi;
+    submit.addEventListener("click", grade);
+    const retry = document.createElement("button");
+    retry.className = "btn ghost sm";
+    retry.type = "button";
+    retry.textContent = "Try again";
+    retry.hidden = true;
+    retry.addEventListener("click", reset);
+    actions.append(submit, retry);
+    wrap.appendChild(actions);
+
+    const why = document.createElement("div");
+    why.className = "why";
+    why.hidden = true;
+    const vd = document.createElement("div");
+    vd.className = "vd";
+    const wp = document.createElement("p");
+    why.append(vd, wp);
+    wrap.appendChild(why);
+
+    function reset() {
+      locked = false;
+      picked = new Set();
+      wrap.className = "chk";
+      nodes.forEach((b) => { b.disabled = false; b.className = "opt"; });
+      why.hidden = true;
+      retry.hidden = true;
+      if (multi) { submit.hidden = false; submit.disabled = true; }
+    }
+
+    function grade() {
+      if (locked) return;
+      locked = true;
+      const chosen = [...picked].sort((a, b) => a - b);
+      const want = [...c.answer].sort((a, b) => a - b);
+      const ok = JSON.stringify(chosen) === JSON.stringify(want);
+
+      nodes.forEach((b, oi) => {
+        b.disabled = true;
+        b.classList.remove("sel");
+        if (c.answer.includes(oi)) b.classList.add("right");
+        else if (picked.has(oi)) b.classList.add("picked-wrong");
+      });
+      wrap.classList.add(ok ? "ok" : "no");
+      vd.textContent = ok ? "correct" : "not quite";
+      vd.className = "vd " + (ok ? "ok" : "no");
+      wp.textContent = c.why;
+      why.hidden = false;
+      submit.hidden = true;
+      retry.hidden = ok;
+
+      answered[ci] = ok;
+      maybeComplete(L);
+    }
+
+    return wrap;
+  }
+
+  function maybeComplete(L) {
+    const all = L.checks.every((_, ci) => answered[ci] === true);
+    if (!all) return;
+    if (!isDone(L.id)) {
+      state.done.push(L.id);
+      save.write(state);
+      renderNav();
+    }
+    const btn = el("btn-next");
+    if (btn) btn.disabled = false;
+    const g = el("gate");
+    if (g) g.textContent = "lesson complete";
+  }
+
+  // ----------------------------------------------------------------- misc
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function go(i) {
+    cursor = i;
+    state.at = FLAT[i].id;
+    save.write(state);
+    renderLesson(i);
+    renderNav();
+  }
+  function closeRail() {
+    el("rail").classList.remove("open");
+    el("scrim").classList.remove("open");
+  }
+
+  el("btn-menu").addEventListener("click", () => {
+    el("rail").classList.toggle("open");
+    el("scrim").classList.toggle("open");
+  });
+  el("scrim").addEventListener("click", closeRail);
+  el("btn-restart").addEventListener("click", () => {
+    if (!confirm("Reset all lesson progress?")) return;
+    state = { done: [], at: null };
+    save.wipe();
+    cursor = null;
+    renderIntro();
+    renderNav();
+    closeRail();
+  });
+
+  renderNav();
+  renderIntro();
+})();
+</script>
