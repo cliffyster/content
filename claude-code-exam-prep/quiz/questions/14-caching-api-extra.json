@@ -1,0 +1,212 @@
+[
+  {
+    "id": "pc-010",
+    "domain": "prompt-caching",
+    "difficulty": 2,
+    "question": "In what order does a request render for cache-prefix purposes?",
+    "choices": [
+      "messages, then system, then tools",
+      "tools, then system, then messages",
+      "system, then tools, then messages",
+      "Order is irrelevant to caching"
+    ],
+    "answer": [1],
+    "explanation": "Render order is tools, then system, then messages. Because caching is a prefix match, anything that changes in an earlier section invalidates everything after it -- which is why changing the tool set invalidates the whole cache, and why stable content belongs first.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "pc-011",
+    "domain": "prompt-caching",
+    "difficulty": 3,
+    "question": "Your cache_read_input_tokens is zero across repeated requests with what should be an identical prefix. Which are plausible causes? (select 3)",
+    "choices": [
+      "A datetime.now() or UUID in the system prompt",
+      "json.dumps() on an unsorted dict",
+      "A tool list built from a set, so its order varies",
+      "Using the same model on every request"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "These are the classic silent invalidators: a timestamp or UUID in the prefix, non-deterministic JSON serialization (fix with sort_keys=True), and a tool list whose order varies between requests. A prefix shorter than ~1024 tokens also simply never caches. Keeping the model constant HELPS the cache -- switching models mid-session invalidates it.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "pc-012",
+    "domain": "prompt-caching",
+    "difficulty": 3,
+    "question": "You need to inject an operator instruction mid-conversation without invalidating the cached prefix. What do you do?",
+    "choices": [
+      "Edit the top-level system field",
+      "Append a {\"role\": \"system\", ...} message to the messages array on a supporting model",
+      "Start a new session",
+      "Add it as a tool description"
+    ],
+    "answer": [1],
+    "explanation": "Editing the top-level system prompt mid-session invalidates the cached prefix. Appending a system-role message to messages[] preserves the prefix and carries operator authority rather than reading as user text. On models that do not support it, fall back to a system-reminder-style text block in the user turn.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "pc-013",
+    "domain": "prompt-caching",
+    "difficulty": 2,
+    "question": "You need a cheaper model for one sub-task in a long cached session. What preserves the cache?",
+    "choices": [
+      "Switch the main loop to the cheaper model for those turns",
+      "Spawn a subagent on the cheaper model and keep the main loop on one model",
+      "Set cache_control on the model field",
+      "Nothing -- model switches never affect the cache"
+    ],
+    "answer": [1],
+    "explanation": "Switching models mid-session invalidates the cache. Delegating the sub-task to a subagent on the cheaper model keeps the main loop's prefix intact -- one of three standard agent caching workarounds, alongside mid-conversation system messages and tool search.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "api-010",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "Which SDK behavior should you NOT reimplement yourself?",
+    "choices": [
+      "Retrying 429 and 5xx errors with exponential backoff",
+      "Defining your own message and tool interfaces",
+      "String-matching error messages to classify failures",
+      "All of the above -- the SDK already provides retries, types, and typed exceptions"
+    ],
+    "answer": [3],
+    "explanation": "The SDK auto-retries connection errors, 408, 409, 429 and 5xx with exponential backoff (default 2 retries), exports types for every API object, and provides typed exception classes. Reimplementing any of these loses behavior rather than adding it.",
+    "source": "https://platform.claude.com/docs/en/api/client-sdks"
+  },
+  {
+    "id": "api-011",
+    "domain": "claude-api",
+    "difficulty": 3,
+    "question": "Why should you catch a chain of specific exceptions rather than one broad APIStatusError?",
+    "choices": [
+      "Broad catches are slower",
+      "A single broad catch loses the distinction between retryable failures (429, 5xx, network) and non-retryable ones (400, 404)",
+      "APIStatusError does not exist",
+      "The SDK requires it"
+    ],
+    "answer": [1],
+    "explanation": "Write a most-specific-first chain: NotFoundError (bad model id -- do not retry), RateLimitError (read the retry-after header), APIStatusError (branch on status_code), then APIConnectionError. One broad catch treats a permanently broken request the same as a transient one.",
+    "source": "https://platform.claude.com/docs/en/api/errors"
+  },
+  {
+    "id": "api-012",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "Why do the docs warn against lowballing max_tokens to save money?",
+    "choices": [
+      "It has no effect on cost",
+      "Hitting the cap truncates output mid-thought and you pay for the retry too",
+      "It causes a 400 error",
+      "It disables streaming"
+    ],
+    "answer": [1],
+    "explanation": "stop_reason: max_tokens means the response was cut off mid-thought, so you pay for the truncated output AND the retry. The recommended defaults are generous -- around 16000 for non-streaming (keeping under SDK HTTP timeouts) and higher for streaming, where timeouts are not a concern. Go lower only for a deliberate reason such as classification.",
+    "source": "https://platform.claude.com/docs/en/api/messages"
+  },
+  {
+    "id": "api-013",
+    "domain": "claude-api",
+    "difficulty": 3,
+    "question": "Very large max_tokens values require what, and why?",
+    "choices": [
+      "A beta header, for billing",
+      "Streaming, because a long non-streaming request would hit the HTTP timeout",
+      "A separate endpoint",
+      "Nothing special"
+    ],
+    "answer": [1],
+    "explanation": "Current models support very large output caps, but the SDKs require streaming at those values to avoid HTTP timeouts. Use .stream() with .get_final_message() / .finalMessage() when you do not need to handle individual stream events.",
+    "source": "https://platform.claude.com/docs/en/api/streaming"
+  },
+  {
+    "id": "api-014",
+    "domain": "claude-api",
+    "difficulty": 2,
+    "question": "Why should you always parse tool_use.input with json.loads() rather than string-matching the serialized input?",
+    "choices": [
+      "String matching is slower",
+      "JSON string escaping in tool inputs can differ between models -- Unicode or forward-slash escaping varies, so raw string matching breaks",
+      "The input is encrypted",
+      "The input is not JSON"
+    ],
+    "answer": [1],
+    "explanation": "Current models may produce different JSON string escaping in tool call input fields. Parsing properly is robust to that; raw string matching on the serialized form is a bug that appears only after a model change.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "set-010",
+    "domain": "settings",
+    "difficulty": 3,
+    "question": "You want hooks disabled for one run, so you set disableAllHooks in your user settings. Why might they still run?",
+    "choices": [
+      "disableAllHooks is not a real setting",
+      "The repository's project settings take precedence over yours and can set it back to false -- pass --settings '{\"disableAllHooks\": true}' instead",
+      "Hooks ignore all settings",
+      "It only applies to PostToolUse hooks"
+    ],
+    "answer": [1],
+    "explanation": "Project settings outrank user settings, so a repo can set disableAllHooks back to false. The command-line --settings flag sits above project local and project settings in the precedence order, so passing it there wins -- though managed settings still outrank everything.",
+    "source": "https://code.claude.com/docs/en/settings"
+  },
+  {
+    "id": "set-011",
+    "domain": "settings",
+    "difficulty": 2,
+    "question": "Which settings key lets an organization put managed CLAUDE.md content directly inside managed-settings.json?",
+    "choices": [
+      "claudeMd",
+      "systemPrompt",
+      "instructions",
+      "memoryContent"
+    ],
+    "answer": [0],
+    "explanation": "The claudeMd key embeds managed instruction content in managed-settings.json instead of deploying a separate file. It is honored only in managed and policy settings -- setting it in user, project or local settings has no effect -- and it loads before user and project CLAUDE.md.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "set-012",
+    "domain": "settings",
+    "difficulty": 2,
+    "question": "In a monorepo, how do you stop another team's ancestor CLAUDE.md from loading?",
+    "choices": [
+      "Delete it",
+      "claudeMdExcludes with a path or glob pattern",
+      "Set setting-sources to exclude project",
+      "It cannot be prevented"
+    ],
+    "answer": [1],
+    "explanation": "claudeMdExcludes takes glob patterns matched against absolute file paths, can be set at any settings layer, and arrays merge across layers. Managed policy CLAUDE.md files cannot be excluded, which is the point of the managed tier.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "ctx-010",
+    "domain": "context",
+    "difficulty": 2,
+    "question": "Where does git information appear in the startup context?",
+    "choices": [
+      "It does not load at all",
+      "Branch, status and recent commits load as a separate block at the very end of the system prompt",
+      "In the first user message",
+      "Only when you run a git command"
+    ],
+    "answer": [1],
+    "explanation": "Environment info covers working directory, platform, shell and OS version, with git branch, status and recent commits loading as a separate block at the very end of the system prompt. Subagents also receive a git status snapshot even though they get no conversation history.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  },
+  {
+    "id": "ctx-011",
+    "domain": "context",
+    "difficulty": 3,
+    "question": "Since v2.1.198, how does the compaction summarization request handle thinking?",
+    "choices": [
+      "Thinking is always disabled for summarization",
+      "It inherits the session's extended thinking configuration -- on if the session has it on",
+      "It always uses max effort",
+      "Thinking configuration does not apply to compaction"
+    ],
+    "answer": [1],
+    "explanation": "The summarization request inherits the session's extended thinking configuration, so it reasons with thinking enabled when your session has it enabled and stays off otherwise. Thinking affects only how the summary is produced; your session settings are unchanged afterward.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  }
+]

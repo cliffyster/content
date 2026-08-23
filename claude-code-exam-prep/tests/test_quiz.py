@@ -173,7 +173,26 @@ class TestShippedBank(unittest.TestCase):
         self.questions = store.load_questions()
 
     def test_bank_loads_and_is_not_trivially_small(self):
-        self.assertGreaterEqual(len(self.questions), 50)
+        self.assertGreaterEqual(len(self.questions), 150)
+
+    def test_every_domain_has_enough_questions_to_drill(self):
+        counts: dict[str, int] = {}
+        for question in self.questions:
+            counts[question.domain] = counts.get(question.domain, 0) + 1
+        for domain, count in sorted(counts.items()):
+            with self.subTest(domain):
+                # A domain with one question can't produce a meaningful drill.
+                self.assertGreaterEqual(count, 2)
+
+    def test_difficulty_is_in_range(self):
+        for question in self.questions:
+            with self.subTest(question.id):
+                self.assertIn(question.difficulty, (1, 2, 3))
+
+    def test_ids_are_prefixed_consistently(self):
+        for question in self.questions:
+            with self.subTest(question.id):
+                self.assertRegex(question.id, r"^[a-z]+-\d{3}$")
 
     def test_every_question_has_an_explanation_and_source(self):
         for question in self.questions:

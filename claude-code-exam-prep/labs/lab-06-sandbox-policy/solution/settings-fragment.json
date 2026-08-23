@@ -1,0 +1,29 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": ["~/"],
+      "allowRead": ["~/code", "~/.npm", "~/.cache"],
+      "denyWrite": ["~/.ssh", "~/.aws", "~/.config"]
+    },
+    "credentials": {
+      "files": [
+        { "path": "~/.ssh", "mode": "deny" },
+        { "path": "~/.aws/credentials", "mode": "deny" }
+      ],
+      "env": [
+        { "name": "GITHUB_TOKEN", "mode": "deny" },
+        { "name": "NPM_TOKEN", "mode": "deny" },
+        { "name": "AWS_SECRET_ACCESS_KEY", "mode": "deny" }
+      ]
+    },
+    "network": {
+      "allowedDomains": ["registry.npmjs.org", "pypi.org", "files.pythonhosted.org"]
+    }
+  },
+  "permissions": {
+    "ask": ["Bash(git push *)", "Bash(dangerouslyDisableSandbox:true)"]
+  }
+}

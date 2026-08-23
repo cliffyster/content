@@ -1,0 +1,182 @@
+[
+  {
+    "id": "tool-001",
+    "domain": "tools",
+    "difficulty": 3,
+    "question": "Which built-in tool cannot be blocked by a deny rule?",
+    "choices": [
+      "Bash",
+      "EndConversation",
+      "Write",
+      "WebFetch"
+    ],
+    "answer": [1],
+    "explanation": "EndConversation is deliberately exempt: a deny rule can't remove it while any other tool remains, and an ask rule never prompts for it. It exists for sustained abuse, locks the session afterward, and is unavailable in -p, the Agent SDK, the VS Code panel, GitHub Actions, claude.ai web and the cloud providers.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "tool-002",
+    "domain": "tools",
+    "difficulty": 3,
+    "question": "Grep and Glob differ in one behavior that surprises people. Which?",
+    "choices": [
+      "Grep respects .gitignore; Glob ignores it by default",
+      "Glob respects .gitignore; Grep ignores it",
+      "Both always respect .gitignore",
+      "Neither respects .gitignore"
+    ],
+    "answer": [0],
+    "explanation": "Grep is ripgrep-based and respects .gitignore. Glob ignores it by default and supports ** recursion. If a file shows up in a Glob result but never in a Grep, that asymmetry is usually why.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "tool-003",
+    "domain": "tools",
+    "difficulty": 2,
+    "question": "Why is WebFetch described as lossy by design?",
+    "choices": [
+      "It truncates pages at 10KB",
+      "It runs an extraction prompt over the page rather than returning raw content",
+      "It only returns the page title",
+      "It strips all links"
+    ],
+    "answer": [1],
+    "explanation": "WebFetch extracts via an extraction prompt, not raw retrieval, and converts HTML to Markdown. It also auto-upgrades HTTP to HTTPS, caches for 15 minutes, and needs domain permission on the first fetch. Separately, it runs in an isolated context window specifically so fetched content cannot inject into the main conversation.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "tool-004",
+    "domain": "tools",
+    "difficulty": 2,
+    "question": "Which Bash behavior is true?",
+    "choices": [
+      "Every Bash command prompts for permission",
+      "A built-in set of read-only commands such as grep, find and git diff runs without prompting",
+      "Bash never prompts in Manual mode",
+      "Bash output is always written to a file"
+    ],
+    "answer": [1],
+    "explanation": "A built-in read-only command set runs without a prompt even in Manual mode. Long commands can be backgrounded with run_in_background: true, and auto-background on timeout except for sleep, git and compound commands. Output is inline up to about 30KB, then a file path; failures return a 10KB excerpt.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "tool-005",
+    "domain": "tools",
+    "difficulty": 2,
+    "question": "The Edit tool grants what side effect when it succeeds?",
+    "choices": [
+      "Nothing beyond the edit",
+      "Read access to the same path",
+      "Bash access in that directory",
+      "Permission to delete the file"
+    ],
+    "answer": [1],
+    "explanation": "Edit requires a prior read and grants read access to the same path; Write likewise grants implicit read access to the path it writes. Edit's old_string must match exactly once unless you pass replace_all: true.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "tool-006",
+    "domain": "tools",
+    "difficulty": 3,
+    "question": "Which tools are unavailable when running on Amazon Bedrock, Google Cloud or Microsoft Foundry? (select 2)",
+    "choices": [
+      "Monitor",
+      "Read",
+      "RemoteTrigger",
+      "Grep"
+    ],
+    "answer": [0, 2],
+    "explanation": "Monitor, RemoteTrigger, ScheduleWakeup, EndConversation and SendUserFile are unavailable on the third-party cloud providers. The core file and search tools are available everywhere. Artifact separately requires a Pro or higher plan.",
+    "source": "https://code.claude.com/docs/en/tools-reference"
+  },
+  {
+    "id": "plug-001",
+    "domain": "plugins",
+    "difficulty": 2,
+    "question": "Which field is REQUIRED in a plugin's plugin.json manifest?",
+    "choices": [
+      "name",
+      "name and version",
+      "name, version and author",
+      "None -- the manifest itself is optional and all fields have defaults"
+    ],
+    "answer": [0],
+    "explanation": "Only `name` (kebab-case, unique) is required. displayName, version, description, author, homepage, repository, license, keywords and defaultEnabled are metadata; skills, commands, agents, workflows, hooks, mcpServers, lspServers and outputStyles declare components.",
+    "source": "https://code.claude.com/docs/en/plugins-reference"
+  },
+  {
+    "id": "plug-002",
+    "domain": "plugins",
+    "difficulty": 2,
+    "question": "Which plugin path variable survives plugin updates?",
+    "choices": [
+      "${CLAUDE_PLUGIN_ROOT}",
+      "${CLAUDE_PLUGIN_DATA}",
+      "${CLAUDE_PROJECT_DIR}",
+      "${CLAUDE_SKILL_DIR}"
+    ],
+    "answer": [1],
+    "explanation": "${CLAUDE_PLUGIN_DATA} is the plugin's persistent data directory and survives updates -- the right home for caches and dependencies. ${CLAUDE_PLUGIN_ROOT} is the install directory, which an update replaces.",
+    "source": "https://code.claude.com/docs/en/plugins-reference"
+  },
+  {
+    "id": "plug-003",
+    "domain": "plugins",
+    "difficulty": 2,
+    "question": "Which command shows a plugin's components AND its token cost?",
+    "choices": [
+      "claude plugin list",
+      "claude plugin details <plugin>",
+      "claude plugin validate <path>",
+      "claude plugin info <plugin>"
+    ],
+    "answer": [1],
+    "explanation": "`claude plugin details <plugin>` shows components and token cost -- the way to see what a plugin is spending from your context window. `claude plugin validate <path>` checks manifest validity, and `claude plugin list` just enumerates what is installed.",
+    "source": "https://code.claude.com/docs/en/plugins-reference"
+  },
+  {
+    "id": "plug-004",
+    "domain": "plugins",
+    "difficulty": 3,
+    "question": "Where do plugin-provided subagents sit in the precedence order?",
+    "choices": [
+      "Highest -- they override project agents",
+      "Lowest, below project and user agents",
+      "Between managed settings and the --agents flag",
+      "They are not subject to precedence"
+    ],
+    "answer": [1],
+    "explanation": "The order is managed settings, then the --agents CLI flag, then .claude/agents/, then ~/.claude/agents/, then plugin agents/ directories. Being lowest means a plugin can add capability without overriding what a project or user has already defined.",
+    "source": "https://code.claude.com/docs/en/sub-agents"
+  },
+  {
+    "id": "plug-005",
+    "domain": "plugins",
+    "difficulty": 2,
+    "question": "What is a 'skills-directory plugin'?",
+    "choices": [
+      "A plugin that only contains skills and must still be published to a marketplace",
+      "A directory of skills under ~/.claude/skills/ or .claude/skills/ that loads with no marketplace and no install step",
+      "A plugin whose skills are disabled by default",
+      "A marketplace listing that contains only skills"
+    ],
+    "answer": [1],
+    "explanation": "Skills placed directly in ~/.claude/skills/ or .claude/skills/ are auto-loaded with no marketplace install. It is the simplest possible distribution path -- and, from a security standpoint, the one most likely to arrive in a repository you cloned.",
+    "source": "https://code.claude.com/docs/en/plugins-reference"
+  },
+  {
+    "id": "plug-006",
+    "domain": "plugins",
+    "difficulty": 3,
+    "question": "What does installing and enabling a plugin actually cause to run on your machine? (select 3)",
+    "choices": [
+      "Its hooks, at their configured lifecycle events",
+      "Its MCP servers, which start automatically",
+      "Its bin/ directory contents, which are added to PATH",
+      "A mandatory security audit by Anthropic"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "A plugin's hooks fire, its MCP servers start when the plugin is enabled, and its bin/ is added to PATH. `claude plugin validate` checks the manifest, not intent, and Anthropic does not security-audit plugins or MCP servers. Treat a plugin like any dependency you run with your own credentials.",
+    "source": "https://code.claude.com/docs/en/plugins-reference"
+  }
+]

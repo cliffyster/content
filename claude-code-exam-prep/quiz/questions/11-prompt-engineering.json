@@ -1,0 +1,167 @@
+[
+  {
+    "id": "pe-001",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "Where should a 30,000-token document go relative to your question about it?",
+    "choices": [
+      "After the question, so the question frames it",
+      "At the TOP, above the query, instructions and examples",
+      "Split evenly around the question",
+      "In a separate request"
+    ],
+    "answer": [1],
+    "explanation": "Put longform data near the top, above your query, instructions and examples. Queries at the end improved response quality by up to 30 percent in testing, especially with complex multi-document inputs. It also composes with prompt caching, since stable long content at the front is exactly where the cacheable prefix wants it.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-002",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "How many examples do the docs recommend for few-shot prompting, and what makes them effective?",
+    "choices": [
+      "1 example; keep it minimal",
+      "3-5 examples that are relevant, diverse, and wrapped in <example> tags",
+      "20+ examples for statistical coverage",
+      "Examples are discouraged on current models"
+    ],
+    "answer": [1],
+    "explanation": "Three to five is the recommended range. Make them relevant (mirror the real use case), diverse (cover edge cases and vary enough that Claude does not latch onto an unintended pattern) and structured (wrap in <example> tags, several inside <examples>) so Claude can distinguish them from instructions.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-003",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "Which instruction is more effective, and why?",
+    "choices": [
+      "'NEVER use ellipses' -- shorter instructions are followed more reliably",
+      "'Your response will be read aloud by a text-to-speech engine, so never use ellipses since it will not know how to pronounce them' -- giving the reason lets Claude generalize",
+      "Both are equally effective",
+      "Neither; formatting rules belong in a hook"
+    ],
+    "answer": [1],
+    "explanation": "Providing context or motivation behind an instruction helps Claude understand the goal and deliver more targeted responses -- it is smart enough to generalize from the explanation. A bare rule covers only the case you named.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-004",
+    "domain": "prompt-engineering",
+    "difficulty": 1,
+    "question": "What is the docs' 'golden rule' for testing a prompt?",
+    "choices": [
+      "Run it three times and compare",
+      "Show it to a colleague with minimal context on the task -- if they would be confused, Claude will be too",
+      "Count the tokens",
+      "Ask Claude to rewrite it"
+    ],
+    "answer": [1],
+    "explanation": "The framing is to treat Claude as a brilliant but new employee who lacks context on your norms and workflows. If a human with minimal context could not follow the prompt, neither will Claude.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-005",
+    "domain": "prompt-engineering",
+    "difficulty": 3,
+    "question": "The old trick of prefilling the assistant turn with '{' to force JSON output. What is its status on current models?",
+    "choices": [
+      "Still the recommended approach",
+      "Removed -- assistant prefill returns a 400; use structured outputs or system-prompt instructions instead",
+      "Works but is slower",
+      "Works only with tool use"
+    ],
+    "answer": [1],
+    "explanation": "Assistant message prefills return a 400 error on the current model generation. Use structured outputs (output_config.format, or messages.parse() with a schema) or system prompt instructions to control response format.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-006",
+    "domain": "prompt-engineering",
+    "difficulty": 3,
+    "question": "You inherit prompts written for an older model generation and they underperform on a current model. What is the most likely cause?",
+    "choices": [
+      "The prompts are too short",
+      "They are often too PRESCRIPTIVE -- older-model prompting patterns can reduce output quality, so a migration includes a prompt audit, not just a parameter swap",
+      "They are missing few-shot examples",
+      "They need a higher temperature"
+    ],
+    "answer": [1],
+    "explanation": "Prompts written for prior models are often over-prescriptive and reduce quality on current models. Model migration guidance explicitly includes auditing prompt text, tool descriptions and request code -- prompting written for the source model is part of every migration and does not announce itself.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-007",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "Do you still need to prompt 'think step by step' on current models?",
+    "choices": [
+      "Yes, it is the primary way to get reasoning",
+      "Generally no -- adaptive thinking is a first-class parameter, and depth is tuned with output_config.effort rather than prompt text",
+      "Only for math problems",
+      "Only when tools are enabled"
+    ],
+    "answer": [1],
+    "explanation": "Adaptive thinking replaces chain-of-thought prompting as the mechanism, and effort controls depth. The best-practices page now warns about the opposite problem -- overthinking and excessive thoroughness -- which you tune down with a lower effort setting.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-008",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "What should you have in place BEFORE starting to prompt engineer? (select 3)",
+    "choices": [
+      "A clear definition of success criteria",
+      "A way to test against those criteria empirically",
+      "A first draft prompt to improve",
+      "A fine-tuned model"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "The docs are explicit that the guide assumes all three. Without them you are guessing. They also note that not every failing eval is best solved by prompt engineering -- latency and cost are often improved more easily by changing the model or effort level.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview"
+  },
+  {
+    "id": "pe-009",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "Which agentic-coding failure mode do the docs call out as needing an explicit prompt instruction?",
+    "choices": [
+      "Writing too many comments",
+      "Optimizing for passing tests, including by hardcoding values",
+      "Using the wrong indentation",
+      "Choosing the wrong language"
+    ],
+    "answer": [1],
+    "explanation": "'Avoid focusing on passing tests and hardcoding' is a named section. An agent optimizing for a green suite will hardcode unless told not to. Related named failure modes include overeagerness, excessive file creation, and hallucination in agentic coding.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-010",
+    "domain": "prompt-engineering",
+    "difficulty": 2,
+    "question": "When a prompt mixes instructions, context, examples and variable input, what is the recommended structure?",
+    "choices": [
+      "Markdown headers",
+      "XML tags, one per content type, with consistent descriptive names and nesting where there is a natural hierarchy",
+      "JSON",
+      "Numbered sections only"
+    ],
+    "answer": [1],
+    "explanation": "XML tags help Claude parse complex prompts unambiguously. Use consistent, descriptive tag names across prompts and nest where content has a hierarchy -- documents inside <documents>, each inside <document index=\"n\"> with <source> and <document_content> subtags.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+  },
+  {
+    "id": "pe-011",
+    "domain": "prompt-engineering",
+    "difficulty": 3,
+    "question": "An instruction must run before every commit, without exception. Is that a prompting problem?",
+    "choices": [
+      "Yes -- put it in the system prompt in capital letters",
+      "No -- prompts shape behavior but do not enforce it; that is a hook",
+      "Yes -- add it as a few-shot example",
+      "No -- it belongs in permissions.deny"
+    ],
+    "answer": [1],
+    "explanation": "This is the boundary of prompt engineering. CLAUDE.md and prompts are context that Claude tries to follow with no guarantee of strict compliance. An instruction tied to a specific lifecycle point belongs in a hook, which runs as code regardless of what Claude decides.",
+    "source": "https://code.claude.com/docs/en/memory"
+  }
+]

@@ -19,11 +19,25 @@ The drill engine is **stdlib only**. Only the `sandbox/` scripts need
 
 | | |
 |---|---|
-| [`notes/`](notes/) | Nine sourced study notes — CLI, permissions, skills, hooks, subagents, MCP, agents, API, cost/security |
-| [`quiz/`](quiz/) | A spaced-repetition drill CLI (SM-2) over 68 questions, each with an explanation and a doc link |
-| [`labs/`](labs/) | Five build-it-yourself exercises with solutions |
+| [`notes/`](notes/) | 21 sourced study notes across every exam domain — see the [index](notes/README.md) |
+| [`quiz/`](quiz/) | A spaced-repetition drill CLI (SM-2) over 188 questions in 19 domains, each with an explanation and a doc link |
+| [`labs/`](labs/) | Seven build-it-yourself exercises with solutions and answer notes |
 | [`.claude/`](.claude/) | A working config: 3 hooks, 2 skills, 1 subagent — read them as reference implementations |
 | [`sandbox/`](sandbox/) | Runnable Anthropic SDK experiments: caching, tool runner, LLM-as-judge |
+
+### What the notes cover
+
+**Claude Code core** — CLI and configuration, permissions, skills and slash
+commands, hooks, subagents, MCP.
+**Reference and operations** — the full CLI and built-in command surface, memory
+(CLAUDE.md / `.claude/rules/` / auto memory), the tools reference, plugins and
+marketplaces, headless mode and CI, the context window and compaction.
+**Agents and SDKs** — the four ways to build an agent, and the Claude Agent SDK
+in depth including its six-step permission flow.
+**Claude API** — Messages mechanics, prompt and context engineering, tool design
+and server tools, model selection and platform availability.
+**Security and cost** — caching economics, the sandboxed Bash tool, and Claude
+Code's security model.
 
 ## The drill engine
 
@@ -37,7 +51,8 @@ python3 -m quiz stats                      # accuracy and due counts by domain
 python3 -m quiz reset
 ```
 
-Answer with letters — `a`, or `ac` for multi-select. Scheduling is SM-2:
+Answer with letters — `a`, or `ac` for multi-select. `python3 -m quiz domains`
+lists all 19 domains. Scheduling is SM-2:
 questions you get right stretch out geometrically (1 day → 6 days → 6×ease…),
 questions you miss collapse back to one day and lose ease. Grading is automatic
 from correctness and speed, so there is no self-rating step to skip.

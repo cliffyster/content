@@ -1,0 +1,257 @@
+[
+  {
+    "id": "cli-001",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "What does the --bare flag do, and why is it recommended for CI?",
+    "choices": [
+      "It suppresses colored output so logs are readable",
+      "It skips auto-discovery of hooks, skills, commands, subagents, plugins, MCP servers, auto memory and CLAUDE.md, so a run does not execute repository or host configuration",
+      "It disables all tools except Read",
+      "It runs without a network connection"
+    ],
+    "answer": [1],
+    "explanation": "--bare skips auto-discovery entirely. It matters because WITHOUT it, a `claude -p` run executes the hooks in a project's .claude/settings.json and connects the servers in its .mcp.json even in a folder you have never trusted, with no workspace-trust dialog and no per-server approval prompt. It is recommended for scripted and SDK calls and is slated to become the default for -p.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-002",
+    "domain": "cli",
+    "difficulty": 3,
+    "question": "You run `claude --bare -p 'Summarize README.md'` and it fails to authenticate, even though you are logged in interactively. Why?",
+    "choices": [
+      "--bare requires the --model flag",
+      "In bare mode Claude Code never reads OAuth credentials or the system keychain -- set ANTHROPIC_API_KEY or supply an apiKeyHelper",
+      "-p mode does not support authentication",
+      "Bare mode only works on Bedrock"
+    ],
+    "answer": [1],
+    "explanation": "Bare mode does not use your subscription login: it never reads OAuth credentials or the keychain. Set ANTHROPIC_API_KEY, or pass an apiKeyHelper in the --settings JSON. Bedrock, Google Cloud and Foundry continue to read their own provider credentials as usual.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-003",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "Which --output-format returns newline-delimited JSON events for real-time consumption?",
+    "choices": [
+      "text",
+      "json",
+      "stream-json",
+      "ndjson"
+    ],
+    "answer": [2],
+    "explanation": "stream-json emits one JSON object per line, and the last line is a `result` message with the final text, cost and session metadata. Pair it with --verbose and --include-partial-messages to get token-level deltas.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-004",
+    "domain": "cli",
+    "difficulty": 3,
+    "question": "Your CI job runs `claude -p` with --mcp-config. One MCP server fails config validation. What happens?",
+    "choices": [
+      "The run aborts with a non-zero exit code",
+      "The server is skipped, the run continues and exits cleanly -- you must check mcp_server_errors in the system/init event to catch it",
+      "Claude Code prompts for confirmation",
+      "The server is retried until it connects"
+    ],
+    "answer": [1],
+    "explanation": "Claude Code validates each --mcp-config entry at startup and skips entries that fail, then continues and exits cleanly. The system/init event carries mcp_servers and mcp_server_errors (and plugins / plugin_errors for plugins). A CI gate has to fail on a non-empty errors array itself. When stderr is captured by a CI runner, no warning is printed at all.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-005",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "What permission mode does `claude -p` start in?",
+    "choices": [
+      "auto on Pro/Max/Team plans",
+      "Manual (default) on every plan -- pass the mode you want explicitly",
+      "acceptEdits",
+      "bypassPermissions"
+    ],
+    "answer": [1],
+    "explanation": "For -p, the built-in starting mode is Manual on every plan, even though interactive sessions on Pro, Max and Team start in auto mode. Pass --permission-mode dontAsk for a locked-down CI run, acceptEdits for file work, or auto for classifier review.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-006",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "How do you get output that conforms to a specific JSON Schema from a headless run?",
+    "choices": [
+      "Ask for JSON in the prompt and parse the result field",
+      "--output-format json with --json-schema; the value lands in structured_output",
+      "--output-format schema-json",
+      "Pipe the result through jq --schema"
+    ],
+    "answer": [1],
+    "explanation": "--json-schema with --output-format json constrains the answer and puts it in the structured_output field. An invalid schema now errors with a validator diagnostic rather than silently returning unstructured text. The `format` keyword is accepted but treated as an annotation and not enforced.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-007",
+    "domain": "cli",
+    "difficulty": 3,
+    "question": "In a stream-json output, how do you tell a subagent's messages from the main conversation's?",
+    "choices": [
+      "Subagent messages have type 'subagent'",
+      "parent_tool_use_id holds the spawning tool call's ID for subagent messages, and null for main-conversation messages",
+      "They appear in a separate stream",
+      "Subagent messages are not emitted at all"
+    ],
+    "answer": [1],
+    "explanation": "parent_tool_use_id is the discriminator. By default only subagent tool_use and tool_result blocks are emitted; pass --forward-subagent-text to also emit their text and thinking. Nested subagents carry the ID of the Agent call that spawned them, so you can rebuild the full tree.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-008",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "What is the cap on data piped into `claude -p` via stdin?",
+    "choices": [
+      "1MB",
+      "10MB",
+      "100MB",
+      "There is no cap"
+    ],
+    "answer": [1],
+    "explanation": "Piped stdin is capped at 10MB; beyond that Claude Code exits with a clear error and a non-zero status. Write the content to a file and reference the path in the prompt instead.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-009",
+    "domain": "cli",
+    "difficulty": 3,
+    "question": "You stop a `claude -p` run with SIGTERM. What is the exit code and what happens to the in-flight turn?",
+    "choices": [
+      "0; the turn completes normally",
+      "143; the turn is left unfinished with no result recorded, and continues when you resume the session",
+      "1; the session is deleted",
+      "2; the turn is rolled back"
+    ],
+    "answer": [1],
+    "explanation": "SIGTERM exits with 143. Claude Code terminates the process tree of any running Bash command, runs SessionEnd hooks, and records no result for the unfinished turn -- which continues when you resume the session. To end the turn instead, send SIGINT or call the SDK's interrupt() first.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cli-010",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "Which flags cap the blast radius of an autonomous headless run? (select 2)",
+    "choices": [
+      "--max-turns",
+      "--max-budget-usd",
+      "--verbose",
+      "--fork-session"
+    ],
+    "answer": [0, 1],
+    "explanation": "--max-turns limits agentic turns and --max-budget-usd caps dollars spent on API calls. --verbose only affects output detail, and --fork-session creates a new session ID rather than reusing the original.",
+    "source": "https://code.claude.com/docs/en/cli-reference"
+  },
+  {
+    "id": "cli-011",
+    "domain": "cli",
+    "difficulty": 3,
+    "question": "Which pair of flags replaces vs. adds to Claude Code's default system prompt?",
+    "choices": [
+      "--system-prompt replaces it entirely; --append-system-prompt adds to it",
+      "--append-system-prompt replaces it; --system-prompt adds to it",
+      "Both replace it",
+      "Both append; there is no way to replace the system prompt"
+    ],
+    "answer": [0],
+    "explanation": "--system-prompt (and --system-prompt-file) replaces the entire default system prompt. --append-system-prompt (and --append-system-prompt-file) adds text while keeping default behavior. There is also --append-subagent-system-prompt for every subagent's prompt.",
+    "source": "https://code.claude.com/docs/en/cli-reference"
+  },
+  {
+    "id": "cli-012",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "Which command generates a long-lived OAuth token, useful for CI?",
+    "choices": [
+      "claude auth token",
+      "claude setup-token",
+      "claude config token",
+      "claude mcp login"
+    ],
+    "answer": [1],
+    "explanation": "`claude setup-token` generates a long-lived OAuth token. `claude auth login|logout|status` handle interactive sign-in, and `claude mcp login <name>` runs a specific MCP server's OAuth flow.",
+    "source": "https://code.claude.com/docs/en/cli-reference"
+  },
+  {
+    "id": "cmd-001",
+    "domain": "cli",
+    "difficulty": 1,
+    "question": "Which command visualizes what is currently occupying the context window?",
+    "choices": [
+      "/status",
+      "/context",
+      "/usage",
+      "/compact"
+    ],
+    "answer": [1],
+    "explanation": "/context visualizes current context usage and lists loaded memory files -- the first thing to run when debugging whether a CLAUDE.md actually loaded. /usage (alias /cost) shows token usage and costs, /status shows session status, and /compact summarizes to free space.",
+    "source": "https://code.claude.com/docs/en/commands"
+  },
+  {
+    "id": "cmd-002",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "Which command asks a side question WITHOUT adding it to the conversation?",
+    "choices": [
+      "/btw",
+      "/branch",
+      "/fork",
+      "/subtask"
+    ],
+    "answer": [0],
+    "explanation": "/btw is a context tool: the question and answer do not join the conversation. /branch creates a branch of the conversation to try a different direction, /fork copies it into a new background session, and /subtask hands a side task to a subagent.",
+    "source": "https://code.claude.com/docs/en/commands"
+  },
+  {
+    "id": "cmd-003",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "Which slash commands work inside a `claude -p` prompt string? (select 2)",
+    "choices": [
+      "User-invoked skills and custom commands, e.g. /my-skill",
+      "/model with a value, e.g. /model sonnet",
+      "/login",
+      "/terminal-setup"
+    ],
+    "answer": [0, 1],
+    "explanation": "User-invoked skills and custom commands expand in -p. /model, /effort, /fast, /color and /rename accept the value as an argument, and /config takes key=value. Terminal-interface-only commands such as /login are not available.",
+    "source": "https://code.claude.com/docs/en/headless"
+  },
+  {
+    "id": "cmd-004",
+    "domain": "cli",
+    "difficulty": 1,
+    "question": "Which command rolls both code and conversation back to a checkpoint?",
+    "choices": [
+      "/undo",
+      "/rewind",
+      "/reset",
+      "/clear"
+    ],
+    "answer": [1],
+    "explanation": "/rewind rolls code and conversation back to a checkpoint. /clear starts a new conversation with empty context but does not touch your files.",
+    "source": "https://code.claude.com/docs/en/commands"
+  },
+  {
+    "id": "cmd-005",
+    "domain": "cli",
+    "difficulty": 2,
+    "question": "You have finished one task and want to start an unrelated one in the same session. /clear or /compact?",
+    "choices": [
+      "/compact -- it preserves useful history",
+      "/clear -- the task changed, so the history is now noise; /compact is for when the same task got long",
+      "Neither; start a new terminal session",
+      "/rewind"
+    ],
+    "answer": [1],
+    "explanation": "/compact summarizes and continues, which is right when the task continues but the history got long. When the task itself changed, that history is pure cost -- /clear is the correct choice.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  }
+]

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "sdk-010",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "Put the Agent SDK's permission evaluation steps in order.",
+    "choices": [
+      "Deny rules, ask rules, allow rules, hooks, permission mode, canUseTool",
+      "Hooks, deny rules, ask rules, permission mode, allow rules, canUseTool",
+      "canUseTool, hooks, deny, ask, allow, permission mode",
+      "Permission mode, hooks, deny, ask, allow, canUseTool"
+    ],
+    "answer": [1],
+    "explanation": "The six steps are: hooks, deny rules, ask rules, permission mode, allow rules, then the canUseTool callback. Hooks run first and can deny outright, but a hook returning allow does NOT skip the deny and ask rules below it.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-011",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "You put a security check in your canUseTool callback and also set allowed_tools=['Read']. Why might the check never run for Read?",
+    "choices": [
+      "canUseTool only fires for Bash",
+      "Auto-approved tools never reach canUseTool -- a bare allow entry approves every call to that tool before the callback is consulted",
+      "Read is a read-only tool and is exempt from all checks",
+      "The callback must be registered before allowed_tools"
+    ],
+    "answer": [1],
+    "explanation": "Anything approved at an earlier step -- by an allow rule, acceptEdits or bypassPermissions -- skips the callback entirely. A bare entry like 'Read' auto-approves every Read; a scoped entry like Bash(ls *) only auto-approves matching calls. For a check that must run on every call, use a PreToolUse hook, which runs before every other step.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-012",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "You set allowed_tools=['Read'] and permission_mode='bypassPermissions'. Which tools can Claude use?",
+    "choices": [
+      "Only Read",
+      "Every tool -- allowed_tools does not constrain bypassPermissions; unlisted tools fall through to the mode, which approves them",
+      "No tools; the settings conflict",
+      "Read plus the read-only command set"
+    ],
+    "answer": [1],
+    "explanation": "allowed_tools pre-approves what you list; it does not restrict anything. Unlisted tools are simply unmatched by an allow rule and fall through to the permission mode -- and bypassPermissions approves them. To block specific tools under bypass, use disallowed_tools. For a locked-down agent, pair allowed_tools with permission_mode='dontAsk' instead.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-013",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "In dontAsk mode, when is the canUseTool callback invoked?",
+    "choices": [
+      "On every tool call",
+      "Only for tools not in allowed_tools",
+      "Never -- the step is skipped and unresolved calls are denied",
+      "Only for MCP tools"
+    ],
+    "answer": [2],
+    "explanation": "dontAsk converts any permission prompt into a denial, so canUseTool is never called. Tools pre-approved by allowed_tools, settings allow rules or a hook still run. Tools requiring user interaction and critical-path rm/rmdir removals are denied even when an allow rule matches.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-014",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "A subagent's AgentDefinition sets permissionMode: 'default', but the parent session is running bypassPermissions. What mode does the subagent run in?",
+    "choices": [
+      "default -- the definition wins",
+      "bypassPermissions -- bypassPermissions, acceptEdits and auto apply to every subagent and cannot be overridden per subagent",
+      "plan, as a safe fallback",
+      "The subagent refuses to start"
+    ],
+    "answer": [1],
+    "explanation": "Subagents inherit the parent's permission mode. A definition's permissionMode can override it EXCEPT when the parent uses bypassPermissions, acceptEdits or auto. This matters because subagents may have different system prompts and less constrained behavior, so inheriting bypass grants them full autonomous system access.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-015",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "When should you use ClaudeSDKClient instead of query()?",
+    "choices": [
+      "For one-off tasks",
+      "For continuous multi-turn conversations in one session, and when you need interrupts",
+      "Only when using MCP servers",
+      "Only in TypeScript"
+    ],
+    "answer": [1],
+    "explanation": "query() suits one-off tasks and creates a new session each time (unless continue_conversation=True). ClaudeSDKClient reuses one session across turns and supports interrupts.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/python"
+  },
+  {
+    "id": "sdk-016",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "You define a custom tool with @tool and create_sdk_mcp_server(name='math', tools=[add]). What name must appear in allowed_tools?",
+    "choices": [
+      "add",
+      "math.add",
+      "mcp__math__add",
+      "sdk__math__add"
+    ],
+    "answer": [2],
+    "explanation": "SDK custom tools are exposed as an in-process MCP server, so they follow the standard mcp__<server>__<tool> naming -- including in permission rules. This also means the MCP allow-glob rule applies: mcp__math__* works, mcp__* does not.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/custom-tools"
+  },
+  {
+    "id": "sdk-017",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "You set setting_sources explicitly to ['user']. What happens to your project's .claude/settings.json permission rules?",
+    "choices": [
+      "They still apply -- project settings are always loaded",
+      "They stop applying; 'project' must be in the list, though default query() options include it",
+      "They apply only to hooks",
+      "Claude Code raises a configuration error"
+    ],
+    "answer": [1],
+    "explanation": "Settings-file allow/deny/ask rules are read when the `project` setting source is enabled, which it is for default query() options. Once you set setting_sources explicitly you must include 'project' yourself, or those rules silently stop applying.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-018",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "What can a canUseTool callback return besides allow and deny?",
+    "choices": [
+      "Nothing else",
+      "PermissionResultAllow with updated_input, which rewrites the tool call before it runs",
+      "A new tool name to substitute",
+      "A retry count"
+    ],
+    "answer": [1],
+    "explanation": "PermissionResultAllow(updated_input=...) rewrites the call -- for example redirecting a write into a sandbox directory. It is the same capability a PreToolUse hook gets through updatedInput. PermissionResultDeny takes a message and an optional interrupt flag.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/user-input"
+  },
+  {
+    "id": "sdk-019",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "In which languages is the Claude Agent SDK available as a library, and what do you do from other languages?",
+    "choices": [
+      "Python and TypeScript; from other languages, run the CLI as a subprocess with -p --output-format json",
+      "Python, TypeScript, Go and Java",
+      "TypeScript only",
+      "Every language the Anthropic API SDK supports"
+    ],
+    "answer": [0],
+    "explanation": "The Agent SDK is a Python and TypeScript library. To drive the same agent loop from another language, run the Claude Code CLI as a subprocess with the -p flag and --output-format json.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/overview"
+  },
+  {
+    "id": "sdk-020",
+    "domain": "agent-sdk",
+    "difficulty": 3,
+    "question": "In plan mode under the Agent SDK, what happens to a file edit that matches an allow rule?",
+    "choices": [
+      "It runs, because the allow rule matches",
+      "It is never auto-approved -- plan mode routes file edits to canUseTool regardless of allow rules",
+      "It is denied outright",
+      "It is queued until plan mode exits"
+    ],
+    "answer": [1],
+    "explanation": "Plan mode routes file-edit and shell-write tools to your canUseTool callback regardless of allow rules, so write operations cannot be auto-approved while planning. Read-only tools behave as they do in default mode.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/permissions"
+  },
+  {
+    "id": "sdk-021",
+    "domain": "agent-sdk",
+    "difficulty": 2,
+    "question": "Which option makes the SDK ignore a project's .mcp.json?",
+    "choices": [
+      "strict_mcp_config=True",
+      "disable_mcp=True",
+      "mcp_servers={}",
+      "setting_sources=[]"
+    ],
+    "answer": [0],
+    "explanation": "strict_mcp_config=True restricts the session to the MCP servers you passed in, ignoring .mcp.json. This matters because SDK sessions -- like claude -p and cloud sessions -- load project-scoped servers WITHOUT the interactive approval prompt.",
+    "source": "https://code.claude.com/docs/en/agent-sdk/mcp"
+  }
+]

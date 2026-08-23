@@ -16,8 +16,10 @@ python3 -m unittest discover -s tests    # the full suite (fast, no deps)
 
 - `quiz/` — drill engine. `models.py` (Question/Card), `scheduler.py` (SM-2),
   `store.py` (bank loading + progress persistence), `cli.py` (subcommands).
-- `quiz/questions/*.json` — the question bank. Ids must be globally unique
-  across all files; `answer` is a list of 0-based choice indices.
+- `quiz/questions/*.json` — the question bank, ~188 items across 19 domains.
+  Ids must be globally unique across all files and match `^[a-z]+-\d{3}$`;
+  `answer` is a list of 0-based choice indices; `difficulty` is 1, 2 or 3.
+  Every domain needs at least two questions — the suite enforces all of this.
 - `notes/` — study notes, one per domain.
 - `labs/` — exercises, each with a `solution/`.
 - `sandbox/` — Anthropic SDK scripts. The only code here that needs

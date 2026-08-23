@@ -1,0 +1,272 @@
+[
+  {
+    "id": "sbx-001",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "What is the essential difference between a permission rule and the Bash sandbox?",
+    "choices": [
+      "None -- the sandbox is just a permission mode",
+      "Permission rules decide whether a call runs, evaluated before it from the command string; the sandbox restricts what a running command can access, enforced by the OS on the process",
+      "Permission rules are OS-enforced; the sandbox is advisory",
+      "The sandbox applies to every tool; permission rules apply only to Bash"
+    ],
+    "answer": [1],
+    "explanation": "Permission rules are evaluated before a tool runs, from the command string (plus a classifier in auto mode), and apply to every tool. The sandbox is OS-level enforcement on the running process and applies only to Bash and its children -- so it holds regardless of what the model chose to run, and even if an allowed command does more than its name suggests.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-002",
+    "domain": "sandboxing",
+    "difficulty": 2,
+    "question": "Which OS primitives does the Bash sandbox use?",
+    "choices": [
+      "Docker on all platforms",
+      "Seatbelt on macOS, bubblewrap on Linux and WSL2",
+      "SELinux on Linux, Hyper-V on Windows",
+      "chroot everywhere"
+    ],
+    "answer": [1],
+    "explanation": "macOS uses the built-in Seatbelt framework, so there is nothing to install. Linux and WSL2 use bubblewrap. WSL1 is unsupported because bubblewrap needs kernel features only in WSL2, and native Windows is not supported at all.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-003",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "With sandbox auto-allow enabled and Manual permission mode, what happens to a sandboxable Bash command that modifies a file inside the sandbox boundary?",
+    "choices": [
+      "It prompts, because the mode is Manual",
+      "It runs without prompting -- auto-allow works independently of the permission mode, with plan mode as the exception",
+      "It is denied",
+      "It runs only if an allow rule matches"
+    ],
+    "answer": [1],
+    "explanation": "Auto-allow runs sandboxable commands automatically regardless of your permission mode, so Bash commands that modify files within the sandbox boundary execute without prompting even in Manual mode, where the file-edit tools would have prompted. Plan mode is the exception: auto-allow does not widen approvals there.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-004",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "Even with sandbox auto-allow on, which still force the normal permission flow? (select 3)",
+    "choices": [
+      "Explicit deny rules",
+      "rm or rmdir targeting a critical path",
+      "Content-scoped ask rules like Bash(git push *)",
+      "Any command that writes a file"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "Deny rules are always respected, critical-path removals always go through the regular flow, and content-scoped ask rules still prompt for sandboxed commands. A BARE Bash ask rule (or Bash(*)) is skipped for sandboxed commands -- except in plan mode, where it prompts even for read-only ones.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-005",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "What is the dangerouslyDisableSandbox escape hatch, and how do you close it?",
+    "choices": [
+      "A CLI flag; remove it from your alias",
+      "A Bash parameter Claude may retry with when a command fails due to sandbox restrictions; disable it with \"allowUnsandboxedCommands\": false (Strict sandbox mode)",
+      "A setting that disables the sandbox globally",
+      "An environment variable set by the proxy"
+    ],
+    "answer": [1],
+    "explanation": "When a command fails because the sandbox blocked it, Claude Code appends the violation details to the output and Claude may retry with dangerouslyDisableSandbox. The retry runs outside the sandbox and goes through the normal permission flow. Set \"allowUnsandboxedCommands\": false to ignore the parameter entirely, or add an ask rule for Bash(dangerouslyDisableSandbox:true) to be prompted every time.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-006",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "You set sandbox filesystem allowRead: [\"~/\"] and denyRead: [\"~/.env\"]. What is readable?",
+    "choices": [
+      "Everything under the home directory, including ~/.env -- the broader allow wins",
+      "Nothing -- the rules conflict",
+      "Everything under the home directory except ~/.env -- a deny holds inside a wider allow",
+      "Only ~/.env"
+    ],
+    "answer": [2],
+    "explanation": "A deny holds inside a wider allow, so a broad allow can't silently re-expose a secret. The reverse also works: denyRead: [\"~/\"] with allowRead: [\"~/projects\"] re-opens that narrower region. Wildcard denies such as ~/**/.env hold the same way as exact paths.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-007",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "Why is allowing a broad domain such as github.com in the sandbox network policy risky?",
+    "choices": [
+      "GitHub rate-limits sandboxed traffic",
+      "The proxy does not terminate or inspect TLS by default and decides from the client-supplied hostname, so code inside can use domain fronting to reach hosts outside the allowlist",
+      "It disables filesystem isolation",
+      "It is not risky; domain allowlisting is complete protection"
+    ],
+    "answer": [1],
+    "explanation": "By default the built-in proxy makes its allow decision from the client-supplied hostname without inspecting TLS, so broad domains create data-exfiltration paths via domain fronting. For stronger guarantees, configure a custom proxy that terminates TLS and inspects traffic, and install its CA certificate inside the sandbox.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-008",
+    "domain": "sandboxing",
+    "difficulty": 3,
+    "question": "Which sandbox settings materially weaken isolation? (select 3)",
+    "choices": [
+      "allowUnixSockets granting /var/run/docker.sock",
+      "enableWeakerNestedSandbox",
+      "allowAppleEvents on macOS",
+      "Setting allowedDomains to a single specific host"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "Access to the Docker socket effectively grants the host. enableWeakerNestedSandbox lets Linux isolation run inside Docker without privileged namespaces and considerably weakens it. allowAppleEvents removes code-execution isolation -- sandboxed commands can launch other applications unsandboxed with no prompt -- and is honored only from user, managed or CLI settings, never project settings.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sbx-009",
+    "domain": "sandboxing",
+    "difficulty": 2,
+    "question": "Do Read, Edit and Write go through the Bash sandbox?",
+    "choices": [
+      "Yes, all file tools are sandboxed",
+      "No -- the sandbox isolates Bash subprocesses; the built-in file tools use the permission system directly",
+      "Only Write does",
+      "Only when sandbox.filesystem.disabled is false"
+    ],
+    "answer": [1],
+    "explanation": "The sandbox scope is Bash subprocesses and their children. Read, Edit and Write operate under the permission system instead. Paths from sandbox.filesystem settings and from Read/Edit permission rules are merged into the final sandbox configuration, but the two enforcement mechanisms remain distinct.",
+    "source": "https://code.claude.com/docs/en/sandboxing"
+  },
+  {
+    "id": "sec-010",
+    "domain": "security",
+    "difficulty": 3,
+    "question": "Which safeguard is explicitly DISABLED when running with the -p flag?",
+    "choices": [
+      "The permission system",
+      "Trust verification for first-time codebases and new MCP servers",
+      "Deny rules",
+      "Credential storage"
+    ],
+    "answer": [1],
+    "explanation": "Trust verification is disabled when running non-interactively with -p. Combined with the fact that a non-bare -p run executes the repo's hooks and connects its .mcp.json servers, this is why --bare is the recommended posture for CI.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-011",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "Why does WebFetch use a separate context window?",
+    "choices": [
+      "To reduce latency",
+      "To avoid injecting potentially malicious fetched content into the main conversation",
+      "Because HTML is too large",
+      "To enable caching"
+    ],
+    "answer": [1],
+    "explanation": "Isolated context windows for web fetch are a named prompt-injection safeguard: content pulled from the web is analyzed separately rather than dropped into the main conversation where it could act as instructions.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-012",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "Are curl and wget auto-approved by default?",
+    "choices": [
+      "Yes -- they are read-only",
+      "No -- commands that fetch content from the web are not auto-approved; in Manual mode they prompt like any other non-read-only Bash command",
+      "Only over HTTPS",
+      "Only in auto mode"
+    ],
+    "answer": [1],
+    "explanation": "Network command approval is a named safeguard: curl and wget prompt in Manual mode. You can approve once, add an explicit allow rule like Bash(curl *), or block them entirely with permissions.deny -- the recommended pattern being to deny Bash network tools and allow specific domains via WebFetch(domain:...) instead.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-013",
+    "domain": "security",
+    "difficulty": 3,
+    "question": "In Manual mode Claude Code asks before reading paths outside the working directory. What changes in auto mode?",
+    "choices": [
+      "Nothing",
+      "It reads them without asking",
+      "It denies them outright",
+      "It asks twice"
+    ],
+    "answer": [1],
+    "explanation": "The working-directory boundary behaves differently by mode: in Manual mode Claude Code asks before reading outside it with Read, Grep and Glob; in auto mode it reads them without asking. Widen deliberately with additionalDirectories, or restrict read access for read-only Bash commands with sandbox denyRead rules.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-014",
+    "domain": "security",
+    "difficulty": 3,
+    "question": "You start Claude Code directly in your home directory and it re-prompts for trust on every launch. Why?",
+    "choices": [
+      "A bug fixed in a later version",
+      "Trust acceptance in the home directory is held for the session only and never written to disk, with no setting to persist it -- start from a project subdirectory instead",
+      "The trust file is gitignored",
+      "Home directories require managed settings"
+    ],
+    "answer": [1],
+    "explanation": "When Claude Code starts directly in your home directory, trust acceptance is session-only and is not written to disk; there is no setting to persist it. Start from a project subdirectory, where trust acceptance is saved per directory.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-015",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "Which hook event lets you audit or block configuration changes during a session?",
+    "choices": [
+      "SessionStart",
+      "ConfigChange",
+      "PreToolUse",
+      "InstructionsLoaded"
+    ],
+    "answer": [1],
+    "explanation": "ConfigChange fires when configuration files change and is the recommended way for teams to audit or block settings changes mid-session. InstructionsLoaded is the related diagnostic for seeing which CLAUDE.md and rule files loaded, when, and why.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-016",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "In an Anthropic-hosted cloud session, what restriction applies to git push?",
+    "choices": [
+      "Push is disabled entirely",
+      "Push is restricted to the current working branch",
+      "Push requires a second approval",
+      "Push goes to a fork"
+    ],
+    "answer": [1],
+    "explanation": "Cloud sessions restrict git push to the current working branch. They also run in isolated per-session VMs with network access limited by default, authenticate through a secure proxy using a scoped credential translated to your real GitHub token, log all operations, and reclaim VMs after inactivity.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-017",
+    "domain": "security",
+    "difficulty": 3,
+    "question": "How does Remote Control differ from a cloud session, security-wise?",
+    "choices": [
+      "It is the same thing under another name",
+      "The web interface connects to Claude Code running on your LOCAL machine: execution and file access stay local, no cloud VM and no sandboxing are involved, and the transcript is stored on Anthropic servers while connected to sync devices",
+      "It runs entirely on Anthropic servers with no local component",
+      "It disables the permission system"
+    ],
+    "answer": [1],
+    "explanation": "Remote Control is a local process with a remote interface. All code execution and file access stays local; session traffic goes over TLS and the transcript is stored on Anthropic servers while connected in order to sync across devices. It uses multiple short-lived, narrowly scoped credentials to limit the blast radius of any single compromise.",
+    "source": "https://code.claude.com/docs/en/security"
+  },
+  {
+    "id": "sec-018",
+    "domain": "security",
+    "difficulty": 2,
+    "question": "Does Anthropic security-audit the MCP servers listed in its Directory?",
+    "choices": [
+      "Yes, every server is audited before listing",
+      "No -- connectors are reviewed against listing criteria, but Anthropic does not security-audit or manage any MCP server",
+      "Only servers from verified publishers",
+      "Only servers using the stdio transport"
+    ],
+    "answer": [1],
+    "explanation": "Anthropic reviews connectors against its listing criteria before adding them to the Directory, but explicitly does not security-audit or manage any MCP server. The guidance is to write your own or use servers from providers you trust, and to configure permissions for them.",
+    "source": "https://code.claude.com/docs/en/security"
+  }
+]

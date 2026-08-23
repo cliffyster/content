@@ -1,0 +1,152 @@
+[
+  {
+    "id": "mp-001",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "Which feature is NOT available on Amazon Bedrock or Google Vertex AI?",
+    "choices": [
+      "Tool use",
+      "Prompt caching",
+      "The Message Batches API",
+      "Extended thinking"
+    ],
+    "answer": [2],
+    "explanation": "Message Batches is first-party (and Claude Platform on AWS) only. Core capabilities -- messages, streaming, tool use, PDF input, structured outputs, adaptive thinking and effort, prompt caching, token counting, citations, 1M context -- work across the partner platforms.",
+    "source": "https://platform.claude.com/docs/en/api/claude-on-amazon-bedrock"
+  },
+  {
+    "id": "mp-002",
+    "domain": "models-and-cost",
+    "difficulty": 3,
+    "question": "Your design depends on the code execution tool, web fetch and Managed Agents. Which platforms can you deploy on?",
+    "choices": [
+      "Any of them",
+      "First-party Claude API (and Claude Platform on AWS); those surfaces are unsupported on Bedrock and Vertex",
+      "Bedrock only",
+      "Vertex and Foundry only"
+    ],
+    "answer": [1],
+    "explanation": "Server-side tools and the agentic orchestration surfaces are where the partner platforms diverge most. Code execution, web fetch, the MCP connector and Managed Agents are unavailable on Bedrock and Vertex. Vertex offers web search but only the basic variant without dynamic filtering.",
+    "source": "https://platform.claude.com/docs/en/api/claude-on-vertex-ai"
+  },
+  {
+    "id": "mp-003",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "How should you construct a client for Claude on Google Vertex AI?",
+    "choices": [
+      "Anthropic(base_url='https://vertex...') with your Anthropic API key",
+      "AnthropicVertex(project_id=..., region=...), authenticating with GCP application default credentials",
+      "AnthropicBedrock with a Google region",
+      "The standard Anthropic() client; Vertex is auto-detected"
+    ],
+    "answer": [1],
+    "explanation": "Use the platform's dedicated client class, not a base_url override. AnthropicVertex takes project_id and region and authenticates via GCP ADC -- no Anthropic API key. Bedrock uses AnthropicBedrockMantle(aws_region=...) and prefixes model IDs with 'anthropic.'; Vertex uses the bare model ID.",
+    "source": "https://platform.claude.com/docs/en/api/claude-on-vertex-ai"
+  },
+  {
+    "id": "mp-004",
+    "domain": "models-and-cost",
+    "difficulty": 3,
+    "question": "ANTHROPIC_API_KEY is unset. What should you conclude?",
+    "choices": [
+      "There are no credentials; ask the user for a key",
+      "Nothing yet -- the SDKs also resolve ANTHROPIC_AUTH_TOKEN, an `ant auth login` profile, Workload Identity Federation vars, and the default profile on disk. Check `ant auth status` first",
+      "Authentication will fall back to anonymous access",
+      "Only Bedrock will work"
+    ],
+    "answer": [1],
+    "explanation": "Credential resolution runs ANTHROPIC_API_KEY, then ANTHROPIC_AUTH_TOKEN, then the ANTHROPIC_PROFILE-selected or active OAuth profile, then WIF env vars, then the default profile on disk. A bare Anthropic() works after `ant auth login` with no env var set.",
+    "source": "https://platform.claude.com/docs/en/api/client-sdks"
+  },
+  {
+    "id": "mp-005",
+    "domain": "models-and-cost",
+    "difficulty": 3,
+    "question": "You are converting a working curl from an API key to an OAuth token. What changes?",
+    "choices": [
+      "Only the key value",
+      "The header: OAuth tokens go on `Authorization: Bearer <token>` plus an OAuth beta header, not on `x-api-key`",
+      "The URL path",
+      "Nothing -- both use x-api-key"
+    ],
+    "answer": [1],
+    "explanation": "It is a header change, not a key swap. Get a short-lived token with `ant auth print-credentials --access-token` and send it as Authorization: Bearer, together with the OAuth beta header. The no-flag form of that command prints JSON rather than a bare token.",
+    "source": "https://platform.claude.com/docs/en/api/client-sdks"
+  },
+  {
+    "id": "mp-006",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "Which field does the Models API NOT return?",
+    "choices": [
+      "max_input_tokens",
+      "max_tokens",
+      "capabilities",
+      "context_window"
+    ],
+    "answer": [3],
+    "explanation": "There is no context_window field. The Models API returns id, display_name, created_at, max_input_tokens (the context window), max_tokens (the output cap) and capabilities. Use client.models.list() or .retrieve(id) rather than hardcoding a table that will go stale.",
+    "source": "https://platform.claude.com/docs/en/api/models-list"
+  },
+  {
+    "id": "mp-007",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "Results come back from the Batches API. How do you match them to your requests?",
+    "choices": [
+      "By position in the results array",
+      "By custom_id -- results arrive in ANY order",
+      "By timestamp",
+      "By message ID"
+    ],
+    "answer": [1],
+    "explanation": "Each result carries the custom_id you submitted plus a result.type of succeeded, errored, canceled or expired. Results arrive in any order, so keying by position is a real bug that only shows up under load.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+  },
+  {
+    "id": "mp-008",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "You want to cut cost on an agent without losing capability. What should you try FIRST?",
+    "choices": [
+      "Switch to the smallest model",
+      "Cache the large repeated prefix, then lower output_config.effort",
+      "Reduce max_tokens",
+      "Disable thinking"
+    ],
+    "answer": [1],
+    "explanation": "Caching a large repeated prefix saves up to ~90% on that portion, and lowering effort usually buys savings without capability loss. Lowballing max_tokens truncates output mid-thought and you pay for the retry, and disabling thinking on current models is generally the wrong trade -- lower the effort instead.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "mp-009",
+    "domain": "models-and-cost",
+    "difficulty": 2,
+    "question": "What are the relative costs of a prompt-cache write and a cache read?",
+    "choices": [
+      "Writes ~0.1x, reads ~1.25x",
+      "Writes ~1.25x, reads ~0.1x",
+      "Both 0.5x",
+      "Writes are free; reads are full price"
+    ],
+    "answer": [1],
+    "explanation": "Cache writes cost about 1.25x normal input tokens and reads about 0.1x. That asymmetry is why caching only pays off when the prefix is genuinely reused -- and why a silent invalidator that forces a rewrite every turn is worse than not caching at all.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "mp-010",
+    "domain": "models-and-cost",
+    "difficulty": 3,
+    "question": "How many cache breakpoints can one request have, and what is the minimum cacheable prefix?",
+    "choices": [
+      "4 breakpoints; about 1024 tokens",
+      "1 breakpoint; about 100 tokens",
+      "10 breakpoints; about 5000 tokens",
+      "Unlimited; no minimum"
+    ],
+    "answer": [0],
+    "explanation": "Maximum 4 breakpoints per request, and the minimum cacheable prefix is around 1024 tokens -- shorter prefixes silently do not cache at all, which is a common source of 'why is my cache not working'.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  }
+]

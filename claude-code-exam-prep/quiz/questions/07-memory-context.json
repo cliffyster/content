@@ -1,0 +1,227 @@
+[
+  {
+    "id": "mem-001",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "You put 'always run make lint before committing' in CLAUDE.md, and Claude sometimes forgets. What is the structural fix?",
+    "choices": [
+      "Write it in capital letters",
+      "Repeat it in three places",
+      "Use a hook -- CLAUDE.md is context, not enforced configuration",
+      "Move it to settings.json"
+    ],
+    "answer": [2],
+    "explanation": "CLAUDE.md and auto memory are both loaded as context and Claude treats them as guidance, not enforcement. An instruction that must run at a specific point -- before every commit, after each edit -- belongs in a hook, which executes as code at a fixed lifecycle event regardless of what Claude decides.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-002",
+    "domain": "memory",
+    "difficulty": 3,
+    "question": "Claude Code loads CLAUDE.md from the working directory and every directory above it. In what order do they appear in context?",
+    "choices": [
+      "Working directory first, then upward -- most specific wins",
+      "From the filesystem root down to the working directory, so instructions closest to where you launched are read LAST",
+      "Alphabetically by path",
+      "Only the nearest file is loaded; the rest are ignored"
+    ],
+    "answer": [1],
+    "explanation": "All discovered files are concatenated, not overridden, ordered root-down. Within each directory CLAUDE.local.md is appended after CLAUDE.md, so your personal notes are the last thing read at that level. Files in SUBdirectories below the working directory load on demand, when Claude reads files there.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-003",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "What is the maximum import depth for @path/to/file references in CLAUDE.md?",
+    "choices": [
+      "1 -- imports cannot themselves import",
+      "Four hops",
+      "Ten hops",
+      "Unlimited"
+    ],
+    "answer": [1],
+    "explanation": "Imported files can recursively import others, to a maximum depth of four hops. Relative paths resolve against the file containing the import, not the working directory. Import parsing skips code spans and fenced blocks, so `@README` in backticks stays literal.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-004",
+    "domain": "memory",
+    "difficulty": 3,
+    "question": "Does splitting a large CLAUDE.md into @imports reduce its context cost?",
+    "choices": [
+      "Yes -- imported files load lazily",
+      "No -- imported files are expanded and loaded at launch; imports help organization, not context cost",
+      "Yes, but only for files over 200 lines",
+      "Only if the imports are in .claude/rules/"
+    ],
+    "answer": [1],
+    "explanation": "Imports are expanded and loaded into context at launch alongside the CLAUDE.md that references them. To actually reduce context, use path-scoped rules in .claude/rules/ (which load only when Claude touches a matching file) or move procedures into skills (which load only when invoked).",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-005",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "Which rules in .claude/rules/ load at launch?",
+    "choices": [
+      "All of them",
+      "Only those WITHOUT a `paths` frontmatter field; path-scoped rules load when Claude reads a matching file",
+      "Only those WITH a `paths` field",
+      "None -- rules are always on demand"
+    ],
+    "answer": [1],
+    "explanation": "Rules without a paths field load unconditionally at launch, with the same priority as .claude/CLAUDE.md. Rules with paths frontmatter trigger when Claude reads a matching file, not on every tool use. User-level rules in ~/.claude/rules/ load before project rules, giving project rules higher priority.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-006",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "Claude Code reads CLAUDE.md, not AGENTS.md. What is the recommended bridge for a repo that already has AGENTS.md?",
+    "choices": [
+      "Rename AGENTS.md to CLAUDE.md",
+      "Create a CLAUDE.md whose first line imports it: @AGENTS.md",
+      "Set an agentsMdPath setting",
+      "Nothing -- Claude Code reads AGENTS.md automatically"
+    ],
+    "answer": [1],
+    "explanation": "A CLAUDE.md containing @AGENTS.md loads the imported file at session start, and you can append Claude-specific instructions below it. A symlink also works but needs Administrator or Developer Mode on Windows. `/init` also reads Cursor and Copilot rules and folds relevant parts into the generated CLAUDE.md.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-007",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "What size limits apply to memory files?",
+    "choices": [
+      "CLAUDE.md is loaded in full up to 4 MiB and skipped above that; MEMORY.md loads only its first 200 lines or 25KB",
+      "Both are capped at 200 lines",
+      "Both are capped at 25KB",
+      "There are no size limits"
+    ],
+    "answer": [0],
+    "explanation": "Claude Code loads a CLAUDE.md up to 4 MiB in full and skips a larger one, with a recommended target under 200 lines for adherence. MEMORY.md loads only its first 200 lines or 25KB, whichever comes first; content past that is dropped on the next load even though the write succeeded.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-008",
+    "domain": "memory",
+    "difficulty": 3,
+    "question": "A project CLAUDE.md contains `@~/.claude/my-notes.md`. What happens the first time Claude Code sees it?",
+    "choices": [
+      "It loads silently, like any import",
+      "It is rejected -- project files cannot import from outside the project",
+      "An approval dialog lists the external files; declining disables them permanently and the dialog does not reappear",
+      "It loads but is truncated to 200 lines"
+    ],
+    "answer": [2],
+    "explanation": "An import in a PROJECT memory file whose path resolves outside the working directory is external and triggers a one-time approval dialog. This protects you from files other people commit to a shared project. User-scope memory files are files you wrote yourself, so their imports load without the dialog.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-009",
+    "domain": "memory",
+    "difficulty": 2,
+    "question": "Where does auto memory live, and is it shared across git worktrees?",
+    "choices": [
+      "In the repo at .claude/memory/, shared via git",
+      "At ~/.claude/projects/<project>/memory/ -- machine-local, and all worktrees of the same repo share one directory",
+      "In the session transcript only",
+      "On Anthropic's servers"
+    ],
+    "answer": [1],
+    "explanation": "Auto memory is machine-local at ~/.claude/projects/<project>/memory/, with a MEMORY.md index plus topic files. The <project> path derives from the git repository, so all worktrees and subdirectories of the same repo share one directory. It is excluded from the cleanupPeriodDays retention sweep.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "mem-010",
+    "domain": "memory",
+    "difficulty": 3,
+    "question": "Which four types does Claude record in auto memory frontmatter?",
+    "choices": [
+      "user, feedback, project, reference",
+      "facts, rules, todos, notes",
+      "code, config, tests, docs",
+      "short, medium, long, permanent"
+    ],
+    "answer": [0],
+    "explanation": "The four types are user (your role and preferences), feedback (corrections you gave and approaches you confirmed), project (ongoing work and decisions not derivable from code or git history) and reference (where to find outside information). Claude skips anything derivable from the codebase and anything CLAUDE.md already says.",
+    "source": "https://code.claude.com/docs/en/memory"
+  },
+  {
+    "id": "ctx-001",
+    "domain": "context",
+    "difficulty": 3,
+    "question": "After a /compact, which of these is LOST until its trigger fires again?",
+    "choices": [
+      "Project-root CLAUDE.md",
+      "Auto memory",
+      "A rule with `paths:` frontmatter",
+      "The system prompt"
+    ],
+    "answer": [2],
+    "explanation": "Project-root CLAUDE.md, unscoped rules and auto memory are re-injected from disk. The system prompt and output style are never part of message history so are unaffected. Path-scoped rules and nested CLAUDE.md files entered message history when their trigger file was read, so compaction summarizes them away; they reload the next time a matching file is read.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  },
+  {
+    "id": "ctx-002",
+    "domain": "context",
+    "difficulty": 3,
+    "question": "How are invoked skill bodies treated during compaction?",
+    "choices": [
+      "Dropped entirely",
+      "Re-injected, capped at 5,000 tokens per skill and 25,000 total, with the oldest dropped first",
+      "Re-read fresh from disk in full",
+      "Converted to a one-line summary"
+    ],
+    "answer": [1],
+    "explanation": "Skill bodies are re-injected but truncated to fit a 5,000-token per-skill cap and a 25,000-token total budget, oldest dropped first. Truncation keeps the START of the file -- which is why the most important instructions belong near the top of SKILL.md, not in a closing section.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  },
+  {
+    "id": "ctx-003",
+    "domain": "context",
+    "difficulty": 3,
+    "question": "You have a path-scoped rule that must survive compaction. What do you do?",
+    "choices": [
+      "Add persist: true to its frontmatter",
+      "Drop the `paths:` frontmatter, or move the content into the project-root CLAUDE.md",
+      "Convert it to a hook",
+      "Nothing -- rules always survive"
+    ],
+    "answer": [1],
+    "explanation": "Only unscoped rules and project-root CLAUDE.md are re-injected from disk after compaction. Removing the paths field makes the rule load unconditionally at launch and re-inject afterward. There is no persist flag.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  },
+  {
+    "id": "ctx-004",
+    "domain": "context",
+    "difficulty": 2,
+    "question": "By default, what loads into context for MCP servers at session start?",
+    "choices": [
+      "Full schemas for every tool on every server",
+      "Only tool names -- full schemas stay deferred and load on demand via tool search",
+      "Nothing until you run /mcp",
+      "Only the server names"
+    ],
+    "answer": [1],
+    "explanation": "MCP tool names load so Claude knows what is available, but full schemas stay deferred by default and are pulled on demand. ENABLE_TOOL_SEARCH=auto loads schemas upfront when they fit within 10% of the context window; =false loads everything. With many servers connected this is the difference between a usable session and one that starts half-full.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  },
+  {
+    "id": "ctx-005",
+    "domain": "context",
+    "difficulty": 2,
+    "question": "Which is the biggest STRUCTURAL lever for keeping a long session's context small?",
+    "choices": [
+      "Running /compact more often",
+      "Delegating verbose exploration to subagents, which return a conclusion instead of the files they read",
+      "Shortening your prompts",
+      "Disabling thinking"
+    ],
+    "answer": [1],
+    "explanation": "A subagent runs in its own context window, so a search that reads 40 files returns one paragraph to the parent. Compaction is damage control after the fact; subagents and on-demand skill loading prevent the growth in the first place.",
+    "source": "https://code.claude.com/docs/en/context-window"
+  }
+]

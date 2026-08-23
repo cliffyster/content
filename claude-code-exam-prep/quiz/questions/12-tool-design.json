@@ -1,0 +1,167 @@
+[
+  {
+    "id": "td-001",
+    "domain": "tool-design",
+    "difficulty": 2,
+    "question": "What makes a tool description effective on current Opus models?",
+    "choices": [
+      "Keeping it under ten words",
+      "Being prescriptive about WHEN to call it, not just what it does",
+      "Listing the return type",
+      "Naming the underlying API endpoint"
+    ],
+    "answer": [1],
+    "explanation": "Recent Opus models reach for tools more conservatively, so trigger conditions in the description give measurable lift in should-call rate -- for example 'Call this when the user asks about current prices or recent events'. Also describe each property, use enum for fixed value sets, and mark only genuinely required parameters as required.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-002",
+    "domain": "tool-design",
+    "difficulty": 2,
+    "question": "Which tool_choice value forces Claude to use at least one tool, without specifying which?",
+    "choices": [
+      "{\"type\": \"auto\"}",
+      "{\"type\": \"any\"}",
+      "{\"type\": \"tool\", \"name\": \"...\"}",
+      "{\"type\": \"none\"}"
+    ],
+    "answer": [1],
+    "explanation": "auto lets Claude decide (the default), any forces at least one tool, tool forces a named one, and none forbids tools. Any of these can add \"disable_parallel_tool_use\": true to cap it at one tool per response.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-003",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "When should you promote an action from 'Claude can do it with bash' to a dedicated tool? (select 3)",
+    "choices": [
+      "It is hard to reverse and needs gating -- a send_email tool is easy to gate, `bash -c \"curl -X POST ...\"` is not",
+      "It needs a staleness check, such as rejecting a write if the file changed since Claude last read it",
+      "It is read-only and parallel-safe, so the harness can schedule it concurrently",
+      "It is used more than once per session"
+    ],
+    "answer": [0, 1, 2],
+    "explanation": "Bash hands the harness an opaque command string, the same shape for every action. A dedicated tool gives an action-specific hook with typed arguments it can intercept, gate, render, audit or parallelize. Frequency of use is not the criterion. Rule of thumb: start with bash for breadth, promote when you need to gate, render, audit or parallelize.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-004",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "What is the key property of programmatic tool calling?",
+    "choices": [
+      "Tools run faster because they are batched",
+      "Claude writes a script that calls tools; results return to the RUNNING CODE, not to Claude's context, so token cost scales with the final output rather than intermediate results",
+      "It lets Claude define new tools at runtime",
+      "It runs tools in parallel automatically"
+    ],
+    "answer": [1],
+    "explanation": "Standard tool use is a round trip per call, and most intermediate data is never needed again. With PTC the script runs in the code execution container; when it calls a tool the container pauses, the call executes, and the result returns to the code, which processes it with normal control flow. Only the script's final output reaches Claude.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-005",
+    "domain": "tool-design",
+    "difficulty": 2,
+    "question": "How do you declare Anthropic's client-side bash tool?",
+    "choices": [
+      "As a custom tool named 'bash' with your own input_schema",
+      "{\"type\": \"bash_20250124\", \"name\": \"bash\"} -- it is schema-less",
+      "By setting enable_bash: true",
+      "It is server-side and needs no declaration"
+    ],
+    "answer": [1],
+    "explanation": "Anthropic-defined bash and text editor tools are schema-less: declare the type and name with no input_schema. A custom tool with your own schema named \"bash\" is a DIFFERENT tool. They are client-side: Anthropic defines them, your harness executes them.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-006",
+    "domain": "tool-design",
+    "difficulty": 2,
+    "question": "Which of these are SERVER-side tools that run on Anthropic's infrastructure? (select 2)",
+    "choices": [
+      "Code execution",
+      "Web search",
+      "Text editor",
+      "Memory"
+    ],
+    "answer": [0, 1],
+    "explanation": "Code execution and web search/fetch run entirely on Anthropic infrastructure -- declare them and Claude handles the rest. Bash, text editor and memory are client-side: Anthropic defines the name, schema and usage pattern, but your harness executes them. Computer use can be either.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-007",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "What are the limits of the code execution container?",
+    "choices": [
+      "Unlimited resources with full internet access",
+      "1 CPU, 5 GiB RAM, 5 GiB disk, NO internet access; containers persist 30 days and can be reused",
+      "4 CPUs and internet access through a proxy",
+      "It runs on your machine"
+    ],
+    "answer": [1],
+    "explanation": "It is an isolated container with 1 CPU, 5 GiB RAM and 5 GiB disk, fully sandboxed with no internet access, running Python 3.11 with data science and document libraries pre-installed. Containers persist for 30 days and can be reused across requests.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  },
+  {
+    "id": "td-008",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "Why does tool search preserve the prompt cache while adding and removing tools does not?",
+    "choices": [
+      "Tool search runs on a separate model",
+      "Tool search APPENDS tool definitions rather than swapping them, so the existing cached prefix stays intact",
+      "Tool search results are not part of the request",
+      "The cache ignores the tools block entirely"
+    ],
+    "answer": [1],
+    "explanation": "Caching is a prefix match and the render order is tools, then system, then messages -- so changing the tool set invalidates everything after it. Tool search appends schemas instead of swapping them, preserving the prefix. The related caching workarounds: append a mid-conversation system message instead of editing the system prompt, and spawn a subagent instead of switching models mid-session.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+  },
+  {
+    "id": "td-009",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "Match the context-management mechanism to what it does.",
+    "choices": [
+      "Context editing summarizes; compaction clears; memory persists across sessions",
+      "Context editing CLEARS stale tool results and thinking; compaction SUMMARIZES earlier context; memory PERSISTS across sessions",
+      "All three summarize, at different thresholds",
+      "Compaction and memory are the same feature"
+    ],
+    "answer": [1],
+    "explanation": "Context editing clears old tool results or thinking blocks based on configurable thresholds. Compaction summarizes earlier context into a compaction block server-side. Memory persists state to files across sessions. They are complementary -- many long-running agents use all three.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/context-editing"
+  },
+  {
+    "id": "td-010",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "With server-side compaction enabled, what must you append back into messages each turn?",
+    "choices": [
+      "Just the extracted text of the response",
+      "The full response.content, because the compaction blocks are what the API uses to replace the compacted history",
+      "Only the last text block",
+      "Nothing -- the API is stateful when compaction is on"
+    ],
+    "answer": [1],
+    "explanation": "Append response.content, not just the text. Compaction blocks in the response must be preserved because the API uses them to replace the compacted history on the next request. Extracting only the text string silently loses the compaction state.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/compaction"
+  },
+  {
+    "id": "td-011",
+    "domain": "tool-design",
+    "difficulty": 3,
+    "question": "What error do you get if every tool has defer_loading set for tool search?",
+    "choices": [
+      "It works fine",
+      "400 'All tools have defer_loading set' -- the search tool itself must not be deferred, and at least one tool must be non-deferred",
+      "The tools are silently loaded eagerly",
+      "The request succeeds but no tools are available"
+    ],
+    "answer": [1],
+    "explanation": "The search tool must not have defer_loading: true, and at least one tool in the tools array must be non-deferred, or the API returns 400 'All tools have defer_loading set'.",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/tool-use"
+  }
+]
