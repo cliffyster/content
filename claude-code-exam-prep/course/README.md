@@ -43,8 +43,26 @@ The page shell is `shell-head.html` (styles), `shell-body.html` (markup) and
 `shell-script.html` (the course engine).
 
 ```bash
-./assemble.sh      # regenerate course.json and course.html
+./assemble.sh              # regenerate course.json and course.html
+node test-layout.mjs       # check every lesson at 320/390/430/1440px
 ```
+
+## Layout rules that are easy to break
+
+`test-layout.mjs` exists because both of these shipped once:
+
+- **Use `minmax(0, 1fr)`, never a bare `1fr`,** for the content column. A bare
+  `1fr` is `minmax(auto, 1fr)`, and that `auto` minimum will not shrink below
+  the content's min-content width — so a single long inline `<code>` widens the
+  whole page on a phone.
+- **Never write a bare `code { white-space: normal }`.** It hits `<code>` inside
+  `<pre>` and silently collapses every code block onto one line. Scope inline
+  wrapping to `.teach p code` and friends, and restate `pre code { white-space: pre }`.
+
+The published page also carries its own `<meta name="viewport">` plus a runtime
+injection into `<head>`, because the artifact harness owns `<head>` and without
+the meta iOS Safari lays out at 980px and scales down — which stops every
+`max-width` media query from ever matching.
 
 Then republish `course.html` as the artifact.
 

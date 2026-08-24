@@ -1,0 +1,16 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// The artifact harness supplies <head>, so a viewport meta may be absent.
+// Without it iOS Safari uses a 980px virtual viewport and scales the page
+// down, which stops every max-width media query below from ever matching.
+(function () {
+  try {
+    if (!document.querySelector('meta[name="viewport"]')) {
+      var m = document.createElement("meta");
+      m.name = "viewport";
+      m.content = "width=device-width, initial-scale=1, viewport-fit=cover";
+      document.head.appendChild(m);
+    }
+  } catch (e) { /* non-fatal: the page still renders, just wide */ }
+})();
+</script>

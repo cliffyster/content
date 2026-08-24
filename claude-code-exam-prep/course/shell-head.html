@@ -55,7 +55,12 @@ a{color:var(--signal);text-underline-offset:2px}
 .pane{padding:44px 46px 120px;max-width:860px}
 
 /* ---------- rail ---------- */
-.rail-top{padding-bottom:18px;border-bottom:1px solid var(--rule-soft);margin-bottom:18px}
+.rail-top{padding-bottom:18px;border-bottom:1px solid var(--rule-soft);margin-bottom:18px;
+  position:relative}
+.rail-close{display:none;position:absolute;top:-6px;right:-4px;width:40px;height:40px;
+  background:none;border:0;cursor:pointer;font-size:26px;line-height:1;color:var(--muted);
+  border-radius:3px}
+.rail-close:hover{color:var(--ink)}
 .rail-top h1{font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
 .rail-top .cert{margin-top:5px}
 .meter{height:4px;background:var(--rule);border-radius:2px;overflow:hidden;margin-top:14px}
@@ -206,18 +211,75 @@ h2.lesson-t{font-size:clamp(28px,4.2vw,40px);font-weight:700;letter-spacing:-.02
 
 /* ---------- mobile ---------- */
 .mobile-bar{display:none}
-@media(max-width:900px){
-  .shell{grid-template-columns:1fr}
-  .rail{position:fixed;inset:0 auto 0 0;width:290px;z-index:40;transform:translateX(-100%);
-    transition:transform .22s ease;box-shadow:var(--shadow)}
+@media(max-width:960px){
+  /* Single column: the rail becomes an off-canvas drawer.
+     minmax(0,1fr), not 1fr — a bare 1fr is minmax(auto,1fr) and its auto
+     minimum refuses to shrink below the content's min-content width, so one
+     long inline <code> pushes the whole column past the viewport. */
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;inset:0 auto 0 0;width:min(310px,86vw);z-index:40;
+    transform:translateX(-100%);transition:transform .22s ease;box-shadow:var(--shadow);
+    padding:20px 16px 40px}
   .rail.open{transform:none}
-  .pane{padding:16px 20px 100px}
+  .scrim.open{display:block}
+  .rail-close{display:block}
+  .rail-top h1{padding-right:34px}
+
+  .pane{padding:0 18px 88px;max-width:none;min-width:0}
   .mobile-bar{display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:30;
     background:var(--paper);border-bottom:1px solid var(--rule);
-    margin:-16px -20px 22px;padding:11px 20px}
-  .scrim.open{display:block}
-  body{font-size:16px}
-  .map .row{flex-direction:column;gap:4px}
+    margin:0 -18px 20px;padding:10px 18px;
+    /* keep clear of the notch / home indicator */
+    padding-top:calc(10px + env(safe-area-inset-top))}
+
+  body{font-size:16.5px;line-height:1.62}
+  .teach{font-size:16.5px}
+  .teach p,.teach ul,.teach ol,.teach p.callout,.chk .qt,.take p,.obj p,.why p{max-width:none}
+  h2.lesson-t{font-size:clamp(25px,7.5vw,33px);line-height:1.14;margin-bottom:15px}
+
+  /* Label-above-text instead of a squeezed two-column flex. */
+  .obj,.take{flex-direction:column;gap:6px;padding:13px 15px}
+  .obj{margin-bottom:26px}
+  .take{margin:26px 0 34px}
+
+  /* Long code and wide tables scroll inside themselves, never the page. */
+  .ex pre,.teach pre.mini{font-size:12.5px;line-height:1.65;padding:14px;
+    -webkit-overflow-scrolling:touch}
+  .tbl{font-size:14.5px;display:block;width:100%;overflow-x:auto;
+    -webkit-overflow-scrolling:touch}
+  .tbl th,.tbl td{padding:8px 12px 8px 0;min-width:104px}
+
+  /* An inline code span must be allowed to wrap, or it widens the page. */
+  /* Inline code may wrap. Code INSIDE a <pre> must not — a bare `code`
+     selector here silently destroys every code block's line breaks. */
+  .teach p code,.teach li code,.tbl code,.opt code,.obj code,.why code,.take code,
+  .chk .qt code{white-space:normal;overflow-wrap:anywhere}
+  pre code,.ex pre code,.teach pre.mini code{white-space:pre;overflow-wrap:normal}
+  .teach,.teach p,.teach li,.chk .qt,.why p,.take p,.obj p,.crumb,h2.lesson-t{
+    min-width:0;overflow-wrap:break-word}
+  .ex,.ex pre,.teach pre.mini,.tbl{max-width:100%;min-width:0}
+  .teach p.rule-flow{font-size:14px;padding:12px;overflow-wrap:anywhere}
+
+  /* Comfortable tap targets. */
+  .chk{padding:17px 15px}
+  .opt{padding:13px 13px;font-size:15.5px;min-height:46px}
+  .nav-l{padding:9px 8px;font-size:14.5px}
+  .btn{padding:12px 18px;min-height:46px}
+  .btn.sm{padding:9px 14px;min-height:40px}
+
+  .foot-nav{gap:9px;margin-top:34px}
+  .foot-nav .btn{flex:1 1 auto}
+  .gate{margin-left:0;flex:1 0 100%;text-align:left;order:3}
+
+  .panel{padding:22px 18px}
+  .map .row{flex-direction:column;gap:4px;padding:12px 14px}
   .map .row .t{width:auto}
+  .map .row .n{width:auto}
+}
+@media(max-width:400px){
+  .pane{padding:0 14px 88px}
+  .mobile-bar{margin:0 -14px 18px;padding-left:14px;padding-right:14px}
+  .ex pre,.teach pre.mini{font-size:11.5px}
+}
 }
 </style>

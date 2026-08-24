@@ -374,6 +374,10 @@
     el("scrim").classList.toggle("open");
   });
   el("scrim").addEventListener("click", closeRail);
+  el("btn-close").addEventListener("click", closeRail);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeRail();
+  });
   el("btn-restart").addEventListener("click", () => {
     if (!confirm("Reset all lesson progress?")) return;
     state = { done: [], at: null };

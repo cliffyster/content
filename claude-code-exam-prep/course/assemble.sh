@@ -23,6 +23,7 @@ print(f"{len(mods)} modules, {lessons} lessons, {checks} checks")
 PY
 
 {
+  cat shell-viewport.html
   cat shell-head.html
   cat shell-body.html
   printf '<script>\nconst COURSE = '
